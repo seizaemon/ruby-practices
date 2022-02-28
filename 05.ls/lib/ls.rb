@@ -102,7 +102,7 @@ class Ls
   end
 
   def output_common(entry_list, num_of_rows)
-    (0..num_of_rows - 1).each do |n|
+    num_of_rows.times do |n|
       row = []
       entry_list.each do |column|
         row << column[n] unless column[n].nil?
@@ -138,27 +138,20 @@ class Ls
   end
 
   def calc_num_of_columns(word_length)
-    num_of_columns = OUTPUT_MAX_COLUMNS
-    console_width = IO.console_size[1]
     # コンソールウインドウの幅に応じて列幅を調節する
-    (1..OUTPUT_MAX_COLUMNS).to_a.reverse_each do |n|
-      if n * word_length <= console_width
-        num_of_columns = n
-        break
-      end
+    (1..OUTPUT_MAX_COLUMNS).to_a.reverse.find do |n|
+      n * word_length <= IO.console_size[1]
     end
-    num_of_columns
   end
 
   def format_list(entries, num_of_columns)
     columns = (1..num_of_columns).map { [] }
-    max_rows = entries.size / num_of_columns
-    max_rows += (entries.size % num_of_columns).positive? ? 1 : 0
+    max_rows = (entries.size.to_f / num_of_columns).ceil
 
     entries.each_with_index do |entry, index|
       column_index = index / max_rows
-      if index != 0 && index == entries.size - 1 && columns[num_of_columns - 1].size.zero?
-        columns[num_of_columns - 1].push entry
+      if index != 0 && index == entries.size - 1 && columns.last.size.zero?
+        columns.last.push entry
       else
         columns[column_index].push entry
       end
