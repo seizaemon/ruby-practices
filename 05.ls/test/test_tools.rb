@@ -22,14 +22,14 @@ class TestTools
 
     prefix = is_hidden ? '.' : ''
     basename = is_ja ? @ja_file_basename : @ascii_file_basename
-    create_tmp_files_common(num_of_files, "#{prefix}#{basename}", sub_dir: sub_dir)
+    create_tmp_files_common(num_of_files, "#{prefix}#{basename}", sub_dir_name: sub_dir)
   end
 
-  def create_tmp_files_common(num_of_files, basename, sub_dir: nil)
+  def create_tmp_files_common(num_of_files, basename, sub_dir_name: nil)
     return unless num_of_files.positive?
 
     (1..num_of_files).to_a.map do |n|
-      file_name = sub_dir.nil? ? "#{basename}#{n}" : "#{sub_dir}/#{basename}#{n}"
+      file_name = sub_dir_name.nil? ? "#{basename}#{n}" : "#{sub_dir_name}/#{basename}#{n}"
       File.open("#{@test_dir}/#{file_name}", 'w+') {}
       file_name
     end
@@ -41,14 +41,14 @@ class TestTools
 
     prefix = is_hidden ? '.' : ''
     basename = is_ja ? @ja_dir_basename : @ascii_dir_basename
-    create_tmp_dirs_common(num_of_dirs, "#{prefix}#{basename}", sub_dir: sub_dir)
+    create_tmp_dirs_common(num_of_dirs, "#{prefix}#{basename}", sub_dir_name: sub_dir)
   end
 
-  def create_tmp_dirs_common(num_of_dirs, basename, sub_dir: nil)
+  def create_tmp_dirs_common(num_of_dirs, basename, sub_dir_name: nil)
     return unless num_of_dirs.positive?
 
     (1..num_of_dirs).map do |n|
-      dir_name = sub_dir.nil? ? "#{basename}#{n}" : "#{sub_dir}/#{basename}#{n}"
+      dir_name = sub_dir_name.nil? ? "#{basename}#{n}" : "#{sub_dir_name}/#{basename}#{n}"
       Dir.mkdir("#{@test_dir}/#{dir_name}")
       dir_name
     end

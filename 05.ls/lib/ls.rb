@@ -7,16 +7,6 @@ require 'pathname'
 
 OUTPUT_MAX_COLUMNS = 3
 
-module LsFilters
-  class << self
-    # 隠しファイル・ディレクトリ フィルタ
-    def hide_hidden_entries
-      ->(entry) { File.basename(entry) !~ /^\./ }
-    end
-    # 将来フィルタを追加していく
-  end
-end
-
 class String
   # 空白に換算したときの文字幅を計算する
   def space_size
@@ -30,8 +20,8 @@ def main
   # 将来オプションを実装する
   argv = opt.parse(ARGV)
 
-  # オプションに応じた出力フィルタ追加
-  filters = [LsFilters.hide_hidden_entries]
+  # オプションに応じた出力フィルタ追加(File::Constantsを追加する前提)
+  filters = []
 
   ls = Ls.new(filters)
 
@@ -43,8 +33,8 @@ end
 class Ls
   attr_writer :entries, :filters
 
-  def initialize(filters = [LsFilters.hide_hidden_entries])
-    @filters = filters
+  def initialize(filters = [])
+    @filters = filter_sum(filters)
     @entries = []
   end
 
@@ -77,7 +67,9 @@ class Ls
   def output_files(files)
     return if files.size.zero?
 
-    file_entries = apply_filters(files)
+    file_entries = files.select do |file|
+      File.fnmatch(file, file, @filters)
+    end
     formatted = create_formatted_list(format_entries(file_entries.sort))
 
     max_rows = formatted.size.zero? ? 0 : formatted[0].size
@@ -88,7 +80,7 @@ class Ls
     force_label = true if dirs.size > 1
 
     dirs.each_with_index do |dir, index|
-      entries_in_dir = apply_filters(Dir.entries(dir))
+      entries_in_dir = Dir.glob('*', @filters, base: dir, sort: true)
 
       puts "\n" if index.positive?
       puts "#{dir}:" if force_label
@@ -112,11 +104,8 @@ class Ls
     end
   end
 
-  def apply_filters(entries)
-    @filters.each do |filter|
-      entries.select! { |e| filter.call(e) }
-    end
-    entries
+  def filter_sum(filters)
+    filters.inject(0) { |result, filter| result || filter }
   end
 
   def format_entries(entries)
