@@ -4,6 +4,7 @@
 require 'optparse'
 require 'io/console/size'
 require 'pathname'
+require 'debug'
 
 OUTPUT_MAX_COLUMNS = 3
 
@@ -72,8 +73,7 @@ class Ls
     end
     formatted = create_formatted_list(format_entries(file_entries.sort))
 
-    max_rows = formatted.size.zero? ? 0 : formatted[0].size
-    output_common(formatted, max_rows)
+    output_common(formatted)
   end
 
   def output_dirs(dirs, force_label: false)
@@ -87,14 +87,13 @@ class Ls
       next if entries_in_dir.size.zero?
 
       formatted = create_formatted_list(format_entries(entries_in_dir.sort))
-      max_rows = formatted[0].size
 
-      output_common(formatted, max_rows)
+      output_common(formatted)
     end
   end
 
-  def output_common(entry_list, num_of_rows)
-    num_of_rows.times do |n|
+  def output_common(entry_list)
+    entry_list.map(&:size).max.times do |n|
       row = []
       entry_list.each do |column|
         row << column[n] unless column[n].nil?
@@ -139,7 +138,7 @@ class Ls
 
     entries.each_with_index do |entry, index|
       column_index = index / max_rows
-      if index != 0 && index == entries.size - 1 && columns.last.size.zero?
+      if index == entries.size - 1 && columns.last.size.zero?
         columns.last.push entry
       else
         columns[column_index].push entry
