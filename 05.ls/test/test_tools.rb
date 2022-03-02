@@ -3,7 +3,6 @@
 require 'tmpdir'
 require 'fileutils'
 require 'stringio'
-require 'debug'
 
 class TestTools
   attr_reader :test_dir

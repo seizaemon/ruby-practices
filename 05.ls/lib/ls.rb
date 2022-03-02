@@ -125,6 +125,8 @@ class Ls
   end
 
   def calc_num_of_columns(word_length)
+    return 1 if word_length > IO.console_size[1]
+
     # コンソールウインドウの幅に応じて列幅を調節する
     (1..OUTPUT_MAX_COLUMNS).to_a.reverse.find do |n|
       n * word_length <= IO.console_size[1]

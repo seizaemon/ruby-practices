@@ -39,13 +39,13 @@ class LsSimpleTest < Minitest::Test
     assert_equal "#{file_path}\n", @test_tools.capture_stdout(@test_ls)
   end
 
-  # def test_relative_filepath
-  #   @test_tools.create_tmp_files(1)
-  #   file_path = Pathname.new("#{@test_tools.test_dir}/test_file1")
-  #   relative_file_path = file_path.relative_path_from(Dir.pwd).to_s
-  #   @test_ls.entries = [relative_file_path]
-  #   assert_equal "#{relative_file_path}\n", @test_tools.capture_stdout(@test_ls)
-  # end
+  def test_relative_filepath
+    @test_tools.create_tmp_files(1)
+    file_path = Pathname.new("#{@test_tools.test_dir}/test_file1")
+    relative_file_path = file_path.relative_path_from(Dir.pwd).to_s
+    @test_ls.entries = [relative_file_path]
+    assert_equal "#{relative_file_path}\n", @test_tools.capture_stdout(@test_ls)
+  end
 
   def test_one_dir_with_ascii_name
     @test_tools.create_tmp_dirs(1)
