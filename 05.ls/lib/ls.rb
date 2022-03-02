@@ -4,7 +4,6 @@
 require 'optparse'
 require 'io/console/size'
 require 'pathname'
-require 'debug'
 
 OUTPUT_MAX_COLUMNS = 3
 
