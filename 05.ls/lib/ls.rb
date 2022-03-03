@@ -16,12 +16,14 @@ end
 
 # main
 def main
-  opt = OptionParser.new
-  # 将来オプションを実装する
-  argv = opt.parse(ARGV)
-
   # オプションに応じた出力フィルタ追加(File::Constantsを追加する前提)
   filters = []
+
+  opt = OptionParser.new
+  # オプション処理
+  opt.on('-a') { filters << File::FNM_DOTMATCH }
+
+  argv = opt.parse(ARGV)
 
   ls = Ls.new(filters)
 
@@ -34,7 +36,8 @@ class Ls
   attr_writer :entries, :filters
 
   def initialize(filters = [])
-    @filters = filter_sum(filters)
+    @dir_filters = dir_filter_sum(filters)
+    @file_filters = file_filter_sum(filters)
     @entries = []
   end
 
@@ -68,7 +71,7 @@ class Ls
     return if files.size.zero?
 
     file_entries = files.select do |file|
-      File.fnmatch(file, file, @filters)
+      File.fnmatch(file, file, @file_filters)
     end
     formatted = create_formatted_list(format_entries(file_entries.sort))
 
@@ -79,7 +82,7 @@ class Ls
     force_label = true if dirs.size > 1
 
     dirs.each_with_index do |dir, index|
-      entries_in_dir = Dir.glob('*', @filters, base: dir, sort: true)
+      entries_in_dir = Dir.glob('*', @dir_filters, base: dir, sort: true)
 
       puts "\n" if index.positive?
       puts "#{dir}:" if force_label
@@ -102,8 +105,16 @@ class Ls
     end
   end
 
-  def filter_sum(filters)
-    filters.inject(0) { |result, filter| result || filter }
+  def file_filter_sum(filters)
+    filters.inject(0) do |result, filter|
+      # ファイルの直接指定の場合は隠しファイル属性は無視
+      filter = 0 if filter == File::FNM_DOTMATCH
+      result + filter
+    end
+  end
+
+  def dir_filter_sum(filters)
+    filters.inject(0) { |result, filter| result + filter }
   end
 
   def format_entries(entries)
