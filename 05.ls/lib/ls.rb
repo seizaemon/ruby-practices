@@ -71,7 +71,7 @@ class Ls
     return if files.size.zero?
 
     file_entries = files.select do |file|
-      File.fnmatch(file, file, @file_filters)
+      File.fnmatch(file, file)
     end
     formatted = create_formatted_list(format_entries(file_entries.sort))
 
@@ -106,15 +106,12 @@ class Ls
   end
 
   def file_filter_sum(filters)
-    filters.inject(0) do |result, filter|
-      # ファイルの直接指定の場合は隠しファイル属性は無視
-      filter = 0 if filter == File::FNM_DOTMATCH
-      result + filter
-    end
+    # ファイルの直接指定の場合は隠しファイル属性は無視
+    filters.filter { |filter| filter != File::FNM_DOTMATCH }.sum
   end
 
   def dir_filter_sum(filters)
-    filters.inject(0) { |result, filter| result + filter }
+    filters.sum
   end
 
   def format_entries(entries)
