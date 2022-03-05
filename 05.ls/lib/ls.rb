@@ -14,14 +14,22 @@ class String
   end
 end
 
+class Array
+  # 真偽値でsortの昇順・降順を切替
+  def switch_sort(reverse: false)
+    reverse ? sort.reverse : sort
+  end
+end
+
 # main
 def main
-  # オプションに応じた出力フィルタ追加(File::Constantsを追加する前提)
+  # 出力する内容のフィルタフラグ
   filters = []
 
   opt = OptionParser.new
   # オプション処理
-  opt.on('-a') { filters << File::FNM_DOTMATCH }
+  opt.on('-a') { filters << 'SHOW_DOTMATCH' }
+  opt.on('-r') { filters << 'SORT_REVERSE' }
 
   argv = opt.parse(ARGV)
 
@@ -36,8 +44,7 @@ class Ls
   attr_writer :entries, :filters
 
   def initialize(filters = [])
-    @dir_filters = dir_filter_sum(filters)
-    @file_filters = file_filter_sum(filters)
+    @filters = filters
     @entries = []
   end
 
@@ -70,25 +77,21 @@ class Ls
   def output_files(files)
     return if files.size.zero?
 
-    file_entries = files.select do |file|
-      File.fnmatch(file, file)
-    end
-    formatted = create_formatted_list(format_entries(file_entries.sort))
-
+    formatted = create_formatted_list(format_entries(files.switch_sort(reverse: @filters.include?('SORT_REVERSE'))))
     output_common(formatted)
   end
 
   def output_dirs(dirs, force_label: false)
     force_label = true if dirs.size > 1
 
-    dirs.each_with_index do |dir, index|
-      entries_in_dir = Dir.glob('*', @dir_filters, base: dir, sort: true)
+    dirs.switch_sort(reverse: @filters.include?('SORT_REVERSE')).each_with_index do |dir, index|
+      entries_in_dir = Dir.glob('*', dir_filter_flags_sum, base: dir, sort: true)
 
       puts "\n" if index.positive?
       puts "#{dir}:" if force_label
       next if entries_in_dir.size.zero?
 
-      formatted = create_formatted_list(format_entries(entries_in_dir.sort))
+      formatted = create_formatted_list(format_entries(entries_in_dir.switch_sort(reverse: @filters.include?('SORT_REVERSE'))))
 
       output_common(formatted)
     end
@@ -105,13 +108,10 @@ class Ls
     end
   end
 
-  def file_filter_sum(filters)
-    # ファイルの直接指定の場合は隠しファイル属性は無視
-    filters.filter { |filter| filter != File::FNM_DOTMATCH }.sum
-  end
-
-  def dir_filter_sum(filters)
-    filters.sum
+  def dir_filter_flags_sum
+    result = 0
+    result += File::FNM_DOTMATCH if @filters.include?('SHOW_DOTMATCH')
+    result
   end
 
   def format_entries(entries)
