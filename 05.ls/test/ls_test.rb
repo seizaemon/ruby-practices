@@ -173,6 +173,57 @@ class LsManyEntriesTest < Minitest::Test
   end
 end
 
+class LsManyEntriesWithReverseOptionTest < Minitest::Test
+  def setup
+    @test_tools = TestTools.new
+    # テストのために十分なコンソールの幅がなかった場合はエラーとする
+    raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
+
+    @test_ls = Ls.new(['SORT_REVERSE'])
+    @test_ls.entries = [@test_tools.test_dir]
+  end
+
+  def test_many_files_mixed_format
+    # test_file1 = 9スペース分 日本語のファイル1 = 17スペース分
+    expected = <<~TEXT
+      日本語のファイル3 test_file4        test_file1
+      日本語のファイル2 test_file3
+      日本語のファイル1 test_file2
+    TEXT
+    @test_tools.create_tmp_files(4)
+    @test_tools.create_tmp_files(3, is_ja: true)
+    assert_equal expected, @test_tools.capture_stdout(@test_ls)
+  end
+
+  def test_many_entries_mixed_format_include_hidden_entries
+    # test_file1 = 10スペース分
+    # 日本語のファイル1 = 17スペース分
+    # test_dir = 8スペース分
+    # 日本語のディレクトリ1 = 21スペース分
+    expected = <<~TEXT
+      日本語のファイル2     日本語のディレクトリ1 test_dir2
+      日本語のファイル1     test_file2            test_dir1
+      日本語のディレクトリ2 test_file1
+    TEXT
+
+    @test_tools.create_tmp_files(2)
+    @test_tools.create_tmp_files(2, is_ja: true)
+    @test_tools.create_tmp_dirs(2)
+    @test_tools.create_tmp_dirs(2, is_ja: true)
+
+    @test_tools.create_tmp_files(2, is_hidden: true)
+    @test_tools.create_tmp_dirs(3, is_hidden: true)
+    @test_tools.create_tmp_files(2, is_hidden: true, is_ja: true)
+    @test_tools.create_tmp_dirs(3, is_hidden: true, is_ja: true)
+
+    assert_equal expected, @test_tools.capture_stdout(@test_ls)
+  end
+
+  def teardown
+    @test_tools.cleanup
+  end
+end
+
 class LsManyArgTest < Minitest::Test
   def setup
     @test_tools = TestTools.new
@@ -272,13 +323,69 @@ class LsManyArgTest < Minitest::Test
   end
 end
 
+class LsManyArgWithReverseTest < Minitest::Test
+  def setup
+    @test_tools = TestTools.new
+    # テストのために十分なコンソールの幅がなかった場合はエラーとする
+    raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
+
+    @test_ls = Ls.new(['SORT_REVERSE'])
+    @test_ls.entries = [@test_tools.test_dir]
+  end
+
+  def test_many_file_args
+    expected = <<~TEXT
+      #{@test_tools.test_dir}/test_file2
+      #{@test_tools.test_dir}/test_file1
+    TEXT
+    @test_tools.create_tmp_files(2)
+    @test_ls.entries = [
+      "#{@test_tools.test_dir}/test_file2",
+      "#{@test_tools.test_dir}/test_file1"
+    ]
+    assert_equal expected, @test_tools.capture_stdout(@test_ls)
+  end
+
+  def test_many_dir_args
+    expected = <<~TEXT
+      #{@test_tools.test_dir}/test_dir3:
+      test_file1
+
+      #{@test_tools.test_dir}/test_dir2:
+      test_file3 test_file1 test_dir1
+      test_file2
+
+      #{@test_tools.test_dir}/test_dir1:
+      test_file7 test_file4 test_file1
+      test_file6 test_file3
+      test_file5 test_file2
+    TEXT
+    @test_tools.create_tmp_dirs(3)
+    @test_tools.create_tmp_files(7, sub_dir: 'test_dir1')
+    @test_tools.create_tmp_files(3, sub_dir: 'test_dir2')
+    @test_tools.create_tmp_dirs(1, sub_dir: 'test_dir2')
+    @test_tools.create_tmp_files(1, sub_dir: 'test_dir3')
+
+    @test_ls.entries = [
+      "#{@test_tools.test_dir}/test_dir1",
+      "#{@test_tools.test_dir}/test_dir2",
+      "#{@test_tools.test_dir}/test_dir3"
+    ]
+    assert_equal expected, @test_tools.capture_stdout(@test_ls)
+  end
+
+  def teardown
+    @test_tools.cleanup
+  end
+end
+
 class LsHiddenEntryTest < Minitest::Test
   def setup
     @test_tools = TestTools.new
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new([File::FNM_DOTMATCH])
+    @test_ls = Ls.new(['SHOW_DOTMATCH'])
     @test_ls.entries = [@test_tools.test_dir]
   end
 
@@ -380,7 +487,7 @@ class LsManyArgIncludeHiddenTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new([File::FNM_DOTMATCH])
+    @test_ls = Ls.new(['SHOW_DOTMATCH'])
     @test_ls.entries = [@test_tools.test_dir]
   end
 
@@ -451,6 +558,61 @@ class LsManyArgIncludeHiddenTest < Minitest::Test
       .           .test_file3 test_file3
       .test_file1 test_file1  test_file4
       .test_file2 test_file2
+    TEXT
+    @test_tools.create_tmp_files(2, is_hidden: true)
+    @test_tools.create_tmp_files(1)
+
+    @test_tools.create_tmp_dirs(1, is_hidden: true)
+    @test_tools.create_tmp_files(4, sub_dir: '.test_dir1')
+    @test_tools.create_tmp_files(3, is_hidden: true, sub_dir: '.test_dir1')
+    @test_ls.entries = [
+      "#{@test_tools.test_dir}/.test_file1",
+      "#{@test_tools.test_dir}/.test_file2",
+      "#{@test_tools.test_dir}/test_file1",
+      "#{@test_tools.test_dir}/.test_dir1"
+    ]
+    assert_equal expected1, @test_tools.capture_stdout(@test_ls)
+  end
+
+  def teardown
+    @test_tools.cleanup
+  end
+end
+
+class LsManyArgIncludeHiddenWithReverseTest < Minitest::Test
+  def setup
+    @test_tools = TestTools.new
+    # テストのために十分なコンソールの幅がなかった場合はエラーとする
+    raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
+
+    @test_ls = Ls.new(%w[SHOW_DOTMATCH SORT_REVERSE])
+    @test_ls.entries = [@test_tools.test_dir]
+  end
+
+  def test_many_file_args
+    expected = <<~TEXT
+      #{@test_tools.test_dir}/test_file1
+      #{@test_tools.test_dir}/.test_file1
+    TEXT
+    @test_tools.create_tmp_files(1)
+    @test_tools.create_tmp_files(1, is_hidden: true)
+    @test_ls.entries = [
+      "#{@test_tools.test_dir}/.test_file1",
+      "#{@test_tools.test_dir}/test_file1"
+    ]
+    assert_equal expected, @test_tools.capture_stdout(@test_ls)
+  end
+
+  def test_mixed_args
+    expected1 = <<~TEXT
+      #{@test_tools.test_dir}/test_file1
+      #{@test_tools.test_dir}/.test_file2
+      #{@test_tools.test_dir}/.test_file1
+
+      #{@test_tools.test_dir}/.test_dir1:
+      test_file4  test_file1  .test_file1
+      test_file3  .test_file3 .
+      test_file2  .test_file2
     TEXT
     @test_tools.create_tmp_files(2, is_hidden: true)
     @test_tools.create_tmp_files(1)
