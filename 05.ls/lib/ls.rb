@@ -5,7 +5,6 @@ require 'optparse'
 require 'io/console/size'
 require 'pathname'
 require 'etc'
-require 'debug'
 
 # TODO
 # - 拡張属性マーク(@, +)の表示
