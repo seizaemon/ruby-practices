@@ -184,6 +184,46 @@ class LsWithAllOptionTest < Minitest::Test
   end
 end
 
+class LsWithROptionTest < Minitest::Test
+  def setup
+    @test_tools = TestToolsLongFormat.new
+    @test_ls = LsLong.new(['SORT_REVERSE'])
+    @test_ls.entries = ["#{@test_tools.test_dir}/"]
+    @my_user = Etc.getpwuid(Process.euid).name
+    @my_group = Etc.getgrgid(Process.egid).name
+  end
+
+  def test_files_and_dirs
+    ctimes_current = @test_tools.create_tmp_file_with_ctime(2)
+    @test_tools.create_tmp_dirs(2)
+    ctimes_subdir = @test_tools.create_tmp_file_with_ctime(2, sub_dir: 'test_dir1')
+    ctimes_subdir2 = @test_tools.create_tmp_file_with_ctime(2, sub_dir: 'test_dir2')
+    expected1 = <<~TEXT
+      -rw-r--r--  1 #{@my_user}  #{@my_group}  0 #{ctimes_current[0]} #{@test_tools.test_dir}/test_file2
+      -rw-r--r--  1 #{@my_user}  #{@my_group}  0 #{ctimes_current[0]} #{@test_tools.test_dir}/test_file1
+
+      #{@test_tools.test_dir}/test_dir2/:
+      total 0
+      -rw-r--r--  1 #{@my_user}  #{@my_group}  0 #{ctimes_subdir2[0]} test_file2
+      -rw-r--r--  1 #{@my_user}  #{@my_group}  0 #{ctimes_subdir2[0]} test_file1
+
+      #{@test_tools.test_dir}/test_dir1/:
+      total 0
+      -rw-r--r--  1 #{@my_user}  #{@my_group}  0 #{ctimes_subdir[0]} test_file2
+      -rw-r--r--  1 #{@my_user}  #{@my_group}  0 #{ctimes_subdir[0]} test_file1
+    TEXT
+    @test_ls.entries = [
+      "#{@test_tools.test_dir}/test_dir1/", "#{@test_tools.test_dir}/test_dir2/",
+      "#{@test_tools.test_dir}/test_file1", "#{@test_tools.test_dir}/test_file2"
+    ]
+    assert_equal expected1, @test_tools.capture_stdout(@test_ls)
+  end
+
+  def teardown
+    @test_tools.cleanup
+  end
+end
+
 class LsWithAWithROptionTest < Minitest::Test
   def setup
     @test_tools = TestToolsLongFormat.new
@@ -249,12 +289,39 @@ class LsSpecialFileTest < Minitest::Test
   end
 
   def test_setuid
+    ctime = @test_tools.create_tmp_file_with_ctime(2)
+    FileUtils.chmod('u+s', "#{@test_tools.test_dir}/test_file1")
+    FileUtils.chmod('u+sx', "#{@test_tools.test_dir}/test_file2")
+    expected1 = <<~TEXT
+      total 0
+      -rwSr--r--  1 #{@my_user}  #{@my_group}  0 #{ctime[0]} test_file1
+      -rwsr--r--  1 #{@my_user}  #{@my_group}  0 #{ctime[0]} test_file2
+    TEXT
+    assert_equal expected1, @test_tools.capture_stdout(@test_ls)
   end
 
   def test_setgid
+    ctime = @test_tools.create_tmp_file_with_ctime(2)
+    FileUtils.chmod('g+s', "#{@test_tools.test_dir}/test_file1")
+    FileUtils.chmod('g+sx', "#{@test_tools.test_dir}/test_file2")
+    expected1 = <<~TEXT
+      total 0
+      -rw-r-Sr--  1 #{@my_user}  #{@my_group}  0 #{ctime[0]} test_file1
+      -rw-r-sr--  1 #{@my_user}  #{@my_group}  0 #{ctime[0]} test_file2
+    TEXT
+    assert_equal expected1, @test_tools.capture_stdout(@test_ls)
   end
 
   def test_sticky
+    ctime = @test_tools.create_tmp_file_with_ctime(2)
+    FileUtils.chmod('o+t', "#{@test_tools.test_dir}/test_file1")
+    FileUtils.chmod('o+tx', "#{@test_tools.test_dir}/test_file2")
+    expected1 = <<~TEXT
+      total 0
+      -rw-r--r-T  1 #{@my_user}  #{@my_group}  0 #{ctime[0]} test_file1
+      -rw-r--r-t  1 #{@my_user}  #{@my_group}  0 #{ctime[0]} test_file2
+    TEXT
+    assert_equal expected1, @test_tools.capture_stdout(@test_ls)
   end
 
   def test_fifo
