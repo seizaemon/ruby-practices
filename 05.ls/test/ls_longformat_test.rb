@@ -248,6 +248,15 @@ class LsSpecialFileTest < Minitest::Test
     assert_equal expected1, @test_tools.capture_stdout(@test_ls)
   end
 
+  def test_setuid
+  end
+
+  def test_setgid
+  end
+
+  def test_sticky
+  end
+
   def test_fifo
     ctime = @test_tools.make_fifo
     expected1 = <<~TEXT
@@ -270,6 +279,11 @@ class LsSpecialFileTest < Minitest::Test
   def test_socket_file
     @test_ls.entries = ['/var/run/mDNSResponder']
     assert_equal @test_tools.ref_socket_file, @test_tools.capture_stdout(@test_ls)
+  end
+
+  def test_file_with_xattr
+    @test_ls.entries = ['/var/run/utmpx']
+    assert_equal @test_tools.ref_xattr_file, @test_tools.capture_stdout(@test_ls)
   end
 
   def teardown

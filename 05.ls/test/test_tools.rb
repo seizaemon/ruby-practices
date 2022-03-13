@@ -112,6 +112,10 @@ class TestToolsLongFormat < TestTools
     "srw-rw-rw-  1 root  daemon  0  3  4 16:55 /var/run/mDNSResponder\n"
   end
 
+  def ref_xattr_file
+    "-rw-r--r--@  1 root  daemon  3768  3 11 22:49 /var/run/utmpx\n"
+  end
+
   def create_tmp_file_with_ctime(num_of_files, sub_dir: nil, is_ja: false, is_hidden: false, perm: 0o644)
     create_tmp_files(num_of_files, sub_dir:, is_ja:, is_hidden:, perm:)
   end

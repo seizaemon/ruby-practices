@@ -6,10 +6,6 @@ require 'io/console/size'
 require 'pathname'
 require 'etc'
 
-# TODO
-# - 拡張属性マーク(@, +)の表示
-# - リファクタリング
-
 OUTPUT_MAX_COLUMNS = 3
 
 class String
@@ -216,21 +212,34 @@ class LsLong < Ls
   end
 
   def format_entries(entries, base_dir = '')
-    max_size_digit = get_max_size_digit(entries.map { |entry| (Pathname.new(base_dir) + entry).to_s })
-    max_nlink_digit = get_max_nlink_digit(entries.map { |entry| (Pathname.new(base_dir) + entry).to_s })
-
-    entries.map do |entry|
+    stats = entries.map do |entry|
       stat = File.lstat((Pathname.new(base_dir) + entry).to_s)
       mode_arr = conv_mode(stat.mode)
-      nlink = format("%#{max_nlink_digit}d", stat.nlink)
-      # キャラクタデバイスの場合はデバイスタイプを表示
-      file_size = /[bc]/.match?(mode_arr[0]) ? "0x#{stat.rdev.to_s(16)}" : format("%#{max_size_digit}d", stat.size)
-      owner_group = "#{Etc.getpwuid(stat.uid).name}  #{Etc.getgrgid(stat.gid).name}"
-      mtime = Time.at(stat.mtime).strftime('%_m %_d %H:%M').to_s
-      file_str = mode_arr[0] == 'l' ? "#{entry} -> #{File.readlink((Pathname.new(base_dir) + entry).to_s)}" : entry
+      {
+        'mode_str' => mode_arr.join(''),
+        'xattr_flg' => xattr?((Pathname.new(base_dir) + entry).to_s, mode_arr[0]) ? '@' : '',
+        'nlink' => stat.nlink,
+        # キャラクタデバイスの場合はデバイスタイプを表示
+        'file_size' => /[bc]/.match?(mode_arr[0]) ? "0x#{stat.rdev.to_s(16)}" : stat.size.to_s,
+        'owner_group' => "#{Etc.getpwuid(stat.uid).name}  #{Etc.getgrgid(stat.gid).name}",
+        'mtime' => Time.at(stat.mtime).strftime('%_m %_d %H:%M').to_s,
+        'file_str' => mode_arr[0] == 'l' ? "#{entry} -> #{File.readlink((Pathname.new(base_dir) + entry).to_s)}" : entry
+      }
+    end
+    output_longformat(stats)
+  end
 
+  def output_longformat(stats)
+    max_mode_digit = get_max_digit(stats.map { |e| e['mode_str'] })
+    max_size_digit = get_max_digit(stats.map { |e| e['file_size'] })
+    max_nlink_digit = get_max_digit(stats.map { |e| e['nlink'] })
+
+    stats.map do |stat|
+      mode_fmt_str = format("%-#{max_mode_digit}s", "#{stat['mode_str']}#{stat['xattr_flg']}")
+      size_fmt_str = stat['file_size'].rjust(max_size_digit)
+      nlink_fmt_str = format("%#{max_nlink_digit}d", stat['nlink'])
       # 出力フォーマット
-      "#{mode_arr.join('')}  #{nlink} #{owner_group}  #{file_size} #{mtime} #{file_str}"
+      "#{mode_fmt_str}  #{nlink_fmt_str} #{stat['owner_group']}  #{size_fmt_str} #{stat['mtime']} #{stat['file_str']}"
     end
   end
 
@@ -252,13 +261,19 @@ class LsLong < Ls
     end
   end
 
-  def get_max_size_digit(entries)
-    # ファイルサイズ表記の最大桁数を取得する
-    entries.map { |entry| File.lstat(entry).size.to_s.chars.size }.max
+  def get_max_digit(arr)
+    # 文字列の最大桁数を取得する
+    arr.map { |e| e.to_s.chars.size }.max
   end
 
-  def get_max_nlink_digit(entries)
-    entries.map { |entry| File.lstat(entry).nlink.to_s.chars.size }.max
+  # まだバグがある（openできない？）
+  def xattr?(entry, file_type)
+    return false unless ['-', 'd'].include?(file_type)
+
+    io = IO.popen(['xattr', '-l', entry], 'r', err: open('/dev/null', 'w'))
+    result = io.read
+    io.close
+    !result.chars.size.zero?
   end
 end
 
