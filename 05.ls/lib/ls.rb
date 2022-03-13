@@ -266,7 +266,6 @@ class LsLong < Ls
     arr.map { |e| e.to_s.chars.size }.max
   end
 
-  # まだバグがある（openできない？）
   def xattr?(entry, file_type)
     return false unless ['-', 'd'].include?(file_type)
 
