@@ -179,7 +179,7 @@ class LsManyEntriesWithReverseOptionTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(['SORT_REVERSE'])
+    @test_ls = Ls.new([:SORT_REVERSE])
     @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
@@ -329,7 +329,7 @@ class LsManyArgWithReverseTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(['SORT_REVERSE'])
+    @test_ls = Ls.new([:SORT_REVERSE])
     @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
@@ -385,7 +385,7 @@ class LsHiddenEntryTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(['SHOW_DOTMATCH'])
+    @test_ls = Ls.new([:SHOW_DOTMATCH])
     @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
@@ -487,7 +487,7 @@ class LsManyArgIncludeHiddenTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(['SHOW_DOTMATCH'])
+    @test_ls = Ls.new([:SHOW_DOTMATCH])
     @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
@@ -585,7 +585,7 @@ class LsManyArgIncludeHiddenWithReverseTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(%w[SHOW_DOTMATCH SORT_REVERSE])
+    @test_ls = Ls.new(%i[SHOW_DOTMATCH SORT_REVERSE])
     @test_ls.entries = [@test_tools.test_dir]
   end
 

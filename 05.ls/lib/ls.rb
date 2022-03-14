@@ -5,6 +5,7 @@ require 'optparse'
 require 'io/console/size'
 require 'pathname'
 require 'etc'
+require 'debug'
 
 OUTPUT_MAX_COLUMNS = 3
 
@@ -57,8 +58,8 @@ def main
 
   opt = OptionParser.new
   # オプション処理
-  opt.on('-a') { filters << 'SHOW_DOTMATCH' }
-  opt.on('-r') { filters << 'SORT_REVERSE' }
+  opt.on('-a') { filters << :SHOW_DOTMATCH }
+  opt.on('-r') { filters << :SORT_REVERSE }
   opt.on('-l') { long_format = true }
 
   argv = opt.parse(ARGV)
@@ -103,40 +104,44 @@ class Ls
   def output_files(files)
     return if files.size.zero?
 
-    formatted = create_formatted_list(format_entries(files.switch_sort(reverse: @filters.include?('SORT_REVERSE'))))
-    output_common(formatted)
+    formatted = create_formatted_list(format_entries(files.switch_sort(reverse: @filters.include?(:SORT_REVERSE))))
+    puts output_common(formatted).join("\n")
   end
 
   def output_dirs(dirs, force_label: false)
-    force_label = true if dirs.size > 1
+    return if dirs.size.zero?
 
-    dirs.switch_sort(reverse: @filters.include?('SORT_REVERSE')).each_with_index do |dir, index|
+    force_label ||= (dirs.size > 1)
+
+    output = dirs.switch_sort(reverse: @filters.include?(:SORT_REVERSE)).map do |dir|
+      result = []
       entries_in_dir = Dir.glob('*', dir_filter_flags_sum, base: dir, sort: true)
-
-      puts "\n" if index.positive?
-      puts "#{dir}:" if force_label
-      puts "total #{File.stat.new(dir).blocks}" if @filters.include?('LONG_FORMAT')
-      next if entries_in_dir.size.zero?
-
-      formatted = create_formatted_list(format_entries(entries_in_dir.switch_sort(reverse: @filters.include?('SORT_REVERSE'))))
-      output_common(formatted)
+      result << "#{dir}:" if force_label
+      unless entries_in_dir.size.zero?
+        formatted = create_formatted_list(format_entries(entries_in_dir.switch_sort(reverse: @filters.include?(:SORT_REVERSE))))
+        result << output_common(formatted)
+      end
+      result.join("\n")
     end
+    puts output.join("\n\n") unless output == ['']
   end
 
   def output_common(entry_list)
+    result = []
     entry_list.map(&:size).max.times do |n|
       row = []
       entry_list.each do |column|
         row << column[n] unless column[n].nil?
       end
 
-      puts row.join(' ').rstrip if row.count.positive?
+      result << row.join(' ').rstrip if row.count.positive?
     end
+    result
   end
 
   def dir_filter_flags_sum
     result = 0
-    result += File::FNM_DOTMATCH if @filters.include?('SHOW_DOTMATCH')
+    result += File::FNM_DOTMATCH if @filters.include?(:SHOW_DOTMATCH)
     result
   end
 
@@ -189,26 +194,25 @@ class LsLong < Ls
   def output_files(files)
     return if files.size.zero?
 
-    formatted = format_entries(files.switch_sort(reverse: @filters.include?('SORT_REVERSE')))
+    formatted = format_entries(files.switch_sort(reverse: @filters.include?(:SORT_REVERSE)))
     formatted.each { |line| puts line }
   end
 
   def output_dirs(dirs, force_label: false)
-    force_label = true if dirs.size > 1
+    return if dirs.size.zero?
 
-    dirs.switch_sort(reverse: @filters.include?('SORT_REVERSE')).each_with_index do |dir, index|
+    force_label ||= (dirs.size > 1)
+
+    output = dirs.switch_sort(reverse: @filters.include?(:SORT_REVERSE)).map do |dir|
+      result = []
       entries_in_dir = Dir.glob('*', dir_filter_flags_sum, base: dir, sort: true)
-
-      puts "\n" if index.positive?
-      puts "#{dir}:" if force_label
+      result << "#{dir}:" if force_label
       # 各ディレクトリのブロック数出力
-      puts "total #{File::Stat.new(dir).blocks}"
-
-      next if entries_in_dir.size.zero?
-
-      formatted = format_entries(entries_in_dir.switch_sort(reverse: @filters.include?('SORT_REVERSE')), dir)
-      puts formatted.join("\n")
+      result << "total #{File::Stat.new(dir).blocks}"
+      result << format_entries(entries_in_dir.switch_sort(reverse: @filters.include?(:SORT_REVERSE)), dir).join("\n") unless entries_in_dir.size.zero?
+      result.join("\n")
     end
+    puts output.join("\n\n")
   end
 
   def format_entries(entries, base_dir = '')
@@ -216,30 +220,30 @@ class LsLong < Ls
       stat = File.lstat((Pathname.new(base_dir) + entry).to_s)
       mode_arr = conv_mode(stat.mode)
       {
-        'mode_str' => mode_arr.join(''),
-        'xattr_flg' => xattr?((Pathname.new(base_dir) + entry).to_s, mode_arr[0]) ? '@' : '',
-        'nlink' => stat.nlink,
+        mode_str: mode_arr.join(''),
+        xattr_flg: xattr?((Pathname.new(base_dir) + entry).to_s, mode_arr[0]) ? '@' : '',
+        nlink: stat.nlink,
         # キャラクタデバイスの場合はデバイスタイプを表示
-        'file_size' => /[bc]/.match?(mode_arr[0]) ? "0x#{stat.rdev.to_s(16)}" : stat.size.to_s,
-        'owner_group' => "#{Etc.getpwuid(stat.uid).name}  #{Etc.getgrgid(stat.gid).name}",
-        'mtime' => Time.at(stat.mtime).strftime('%_m %_d %H:%M').to_s,
-        'file_str' => mode_arr[0] == 'l' ? "#{entry} -> #{File.readlink((Pathname.new(base_dir) + entry).to_s)}" : entry
+        file_size: /[bc]/.match?(mode_arr[0]) ? "0x#{stat.rdev.to_s(16)}" : stat.size.to_s,
+        owner_group: "#{Etc.getpwuid(stat.uid).name}  #{Etc.getgrgid(stat.gid).name}",
+        mtime: Time.at(stat.mtime).strftime('%_m %_d %H:%M').to_s,
+        file_str: mode_arr[0] == 'l' ? "#{entry} -> #{File.readlink((Pathname.new(base_dir) + entry).to_s)}" : entry
       }
     end
     output_longformat(stats)
   end
 
   def output_longformat(stats)
-    max_mode_digit = get_max_digit(stats.map { |e| e['mode_str'] })
-    max_size_digit = get_max_digit(stats.map { |e| e['file_size'] })
-    max_nlink_digit = get_max_digit(stats.map { |e| e['nlink'] })
+    max_mode_digit = get_max_digit(stats.map { |e| e[:mode_str] })
+    max_size_digit = get_max_digit(stats.map { |e| e[:file_size] })
+    max_nlink_digit = get_max_digit(stats.map { |e| e[:nlink] })
 
     stats.map do |stat|
-      mode_fmt_str = format("%-#{max_mode_digit}s", "#{stat['mode_str']}#{stat['xattr_flg']}")
-      size_fmt_str = stat['file_size'].rjust(max_size_digit)
-      nlink_fmt_str = format("%#{max_nlink_digit}d", stat['nlink'])
+      mode_fmt_str = format("%-#{max_mode_digit}s", "#{stat[:mode_str]}#{stat[:xattr_flg]}")
+      size_fmt_str = stat[:file_size].rjust(max_size_digit)
+      nlink_fmt_str = format("%#{max_nlink_digit}d", stat[:nlink])
       # 出力フォーマット
-      "#{mode_fmt_str}  #{nlink_fmt_str} #{stat['owner_group']}  #{size_fmt_str} #{stat['mtime']} #{stat['file_str']}"
+      "#{mode_fmt_str}  #{nlink_fmt_str} #{stat[:owner_group]}  #{size_fmt_str} #{stat[:mtime]} #{stat[:file_str]}"
     end
   end
 

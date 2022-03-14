@@ -161,7 +161,7 @@ end
 class LsWithAllOptionTest < Minitest::Test
   def setup
     @test_tools = TestToolsLongFormat.new
-    @test_ls = LsLong.new(['SHOW_DOTMATCH'])
+    @test_ls = LsLong.new([:SHOW_DOTMATCH])
     @test_ls.entries = ["#{@test_tools.test_dir}/"]
     @my_user = Etc.getpwuid(Process.euid).name
     @my_group = Etc.getgrgid(Process.egid).name
@@ -187,7 +187,7 @@ end
 class LsWithROptionTest < Minitest::Test
   def setup
     @test_tools = TestToolsLongFormat.new
-    @test_ls = LsLong.new(['SORT_REVERSE'])
+    @test_ls = LsLong.new([:SORT_REVERSE])
     @test_ls.entries = ["#{@test_tools.test_dir}/"]
     @my_user = Etc.getpwuid(Process.euid).name
     @my_group = Etc.getgrgid(Process.egid).name
@@ -227,7 +227,7 @@ end
 class LsWithAWithROptionTest < Minitest::Test
   def setup
     @test_tools = TestToolsLongFormat.new
-    @test_ls = LsLong.new(%w[SHOW_DOTMATCH SORT_REVERSE])
+    @test_ls = LsLong.new(%i[SHOW_DOTMATCH SORT_REVERSE])
     @test_ls.entries = ["#{@test_tools.test_dir}/"]
     @my_user = Etc.getpwuid(Process.euid).name
     @my_group = Etc.getgrgid(Process.egid).name
