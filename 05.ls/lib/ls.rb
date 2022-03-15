@@ -114,27 +114,24 @@ class Ls
     force_label ||= (dirs.size > 1)
 
     output = dirs.switch_sort(reverse: @filters.include?(:SORT_REVERSE)).map do |dir|
-      result = []
       entries_in_dir = Dir.glob('*', dir_filter_flags_sum, base: dir, sort: true)
-      result << "#{dir}:" if force_label
-      unless entries_in_dir.size.zero?
-        formatted = create_formatted_list(format_entries(entries_in_dir.switch_sort(reverse: @filters.include?(:SORT_REVERSE))))
-        result << output_common(formatted)
-      end
+      result = force_label ? ["#{dir}:"] : []
+      next result.join("\n") if entries_in_dir.size.zero?
+
+      formatted = create_formatted_list(format_entries(entries_in_dir.switch_sort(reverse: @filters.include?(:SORT_REVERSE))))
+      result << output_common(formatted)
       result.join("\n")
     end
-    puts output.join("\n\n") unless output == ['']
+    puts output.join("\n\n") unless output.all?(&:empty?)
   end
 
   def output_common(entry_list)
     result = []
     entry_list.map(&:size).max.times do |n|
-      row = []
-      entry_list.each do |column|
-        row << column[n] unless column[n].nil?
+      row = entry_list.each_with_object([]) do |column, row_of_columns|
+        row_of_columns << column[n] unless column[n].nil?
       end
-
-      result << row.join(' ').rstrip if row.count.positive?
+      result << row.join(' ').rstrip if row.size.positive?
     end
     result
   end
@@ -204,9 +201,8 @@ class LsLong < Ls
     force_label ||= (dirs.size > 1)
 
     output = dirs.switch_sort(reverse: @filters.include?(:SORT_REVERSE)).map do |dir|
-      result = []
       entries_in_dir = Dir.glob('*', dir_filter_flags_sum, base: dir, sort: true)
-      result << "#{dir}:" if force_label
+      result = force_label ? ["#{dir}:"] : []
       # 各ディレクトリのブロック数出力
       result << "total #{File::Stat.new(dir).blocks}"
       result << format_entries(entries_in_dir.switch_sort(reverse: @filters.include?(:SORT_REVERSE)), dir).join("\n") unless entries_in_dir.size.zero?
