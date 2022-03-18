@@ -15,7 +15,7 @@ class LsSimpleTest < Minitest::Test
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
     @test_ls = Ls.new
-    @test_ls.entries = [@test_tools.test_dir]
+    @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
   def test_vacant_dir
@@ -62,14 +62,14 @@ class LsSimpleTest < Minitest::Test
   end
 end
 
-class LsManyEntriesTest < Minitest::Test
+class LsMultipleEntriesTest < Minitest::Test
   def setup
     @test_tools = TestTools.new
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
     @test_ls = Ls.new
-    @test_ls.entries = [@test_tools.test_dir]
+    @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
   def test_many_files_with_same_format
@@ -179,8 +179,8 @@ class LsManyEntriesWithReverseOptionTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(['SORT_REVERSE'])
-    @test_ls.entries = [@test_tools.test_dir]
+    @test_ls = Ls.new([:SORT_REVERSE])
+    @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
   def test_many_files_mixed_format
@@ -231,7 +231,7 @@ class LsManyArgTest < Minitest::Test
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
     @test_ls = Ls.new
-    @test_ls.entries = [@test_tools.test_dir]
+    @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
   def test_many_file_args
@@ -249,30 +249,30 @@ class LsManyArgTest < Minitest::Test
 
   def test_many_vacant_dir_args
     expected = <<~TEXT
-      #{@test_tools.test_dir}/test_dir1:
+      #{@test_tools.test_dir}/test_dir1/:
 
-      #{@test_tools.test_dir}/test_dir2:
+      #{@test_tools.test_dir}/test_dir2/:
     TEXT
     @test_tools.create_tmp_dirs(2)
     @test_ls.entries = [
-      "#{@test_tools.test_dir}/test_dir1",
-      "#{@test_tools.test_dir}/test_dir2"
+      "#{@test_tools.test_dir}/test_dir1/",
+      "#{@test_tools.test_dir}/test_dir2/"
     ]
     assert_equal expected, @test_tools.capture_stdout(@test_ls)
   end
 
   def test_many_dir_args
     expected = <<~TEXT
-      #{@test_tools.test_dir}/test_dir1:
+      #{@test_tools.test_dir}/test_dir1/:
       test_file1 test_file4 test_file7
       test_file2 test_file5
       test_file3 test_file6
 
-      #{@test_tools.test_dir}/test_dir2:
+      #{@test_tools.test_dir}/test_dir2/:
       test_dir1  test_file2 test_file3
       test_file1
 
-      #{@test_tools.test_dir}/test_dir3:
+      #{@test_tools.test_dir}/test_dir3/:
       test_file1
     TEXT
     @test_tools.create_tmp_dirs(3)
@@ -282,9 +282,9 @@ class LsManyArgTest < Minitest::Test
     @test_tools.create_tmp_files(1, sub_dir: 'test_dir3')
 
     @test_ls.entries = [
-      "#{@test_tools.test_dir}/test_dir1",
-      "#{@test_tools.test_dir}/test_dir2",
-      "#{@test_tools.test_dir}/test_dir3"
+      "#{@test_tools.test_dir}/test_dir1/",
+      "#{@test_tools.test_dir}/test_dir2/",
+      "#{@test_tools.test_dir}/test_dir3/"
     ]
     assert_equal expected, @test_tools.capture_stdout(@test_ls)
   end
@@ -295,12 +295,12 @@ class LsManyArgTest < Minitest::Test
       #{@test_tools.test_dir}/test_file2
       #{@test_tools.test_dir}/test_file3
 
-      #{@test_tools.test_dir}/test_dir1:
+      #{@test_tools.test_dir}/test_dir1/:
       test_file1 test_file4 test_file7
       test_file2 test_file5
       test_file3 test_file6
 
-      #{@test_tools.test_dir}/test_dir2:
+      #{@test_tools.test_dir}/test_dir2/:
       test_file1 test_file3 test_file4
       test_file2
     TEXT
@@ -312,8 +312,8 @@ class LsManyArgTest < Minitest::Test
       "#{@test_tools.test_dir}/test_file1",
       "#{@test_tools.test_dir}/test_file2",
       "#{@test_tools.test_dir}/test_file3",
-      "#{@test_tools.test_dir}/test_dir1",
-      "#{@test_tools.test_dir}/test_dir2"
+      "#{@test_tools.test_dir}/test_dir1/",
+      "#{@test_tools.test_dir}/test_dir2/"
     ]
     assert_equal expected1, @test_tools.capture_stdout(@test_ls)
   end
@@ -329,8 +329,8 @@ class LsManyArgWithReverseTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(['SORT_REVERSE'])
-    @test_ls.entries = [@test_tools.test_dir]
+    @test_ls = Ls.new([:SORT_REVERSE])
+    @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
   def test_many_file_args
@@ -348,14 +348,14 @@ class LsManyArgWithReverseTest < Minitest::Test
 
   def test_many_dir_args
     expected = <<~TEXT
-      #{@test_tools.test_dir}/test_dir3:
+      #{@test_tools.test_dir}/test_dir3/:
       test_file1
 
-      #{@test_tools.test_dir}/test_dir2:
+      #{@test_tools.test_dir}/test_dir2/:
       test_file3 test_file1 test_dir1
       test_file2
 
-      #{@test_tools.test_dir}/test_dir1:
+      #{@test_tools.test_dir}/test_dir1/:
       test_file7 test_file4 test_file1
       test_file6 test_file3
       test_file5 test_file2
@@ -367,9 +367,9 @@ class LsManyArgWithReverseTest < Minitest::Test
     @test_tools.create_tmp_files(1, sub_dir: 'test_dir3')
 
     @test_ls.entries = [
-      "#{@test_tools.test_dir}/test_dir1",
-      "#{@test_tools.test_dir}/test_dir2",
-      "#{@test_tools.test_dir}/test_dir3"
+      "#{@test_tools.test_dir}/test_dir1/",
+      "#{@test_tools.test_dir}/test_dir2/",
+      "#{@test_tools.test_dir}/test_dir3/"
     ]
     assert_equal expected, @test_tools.capture_stdout(@test_ls)
   end
@@ -385,8 +385,8 @@ class LsHiddenEntryTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(['SHOW_DOTMATCH'])
-    @test_ls.entries = [@test_tools.test_dir]
+    @test_ls = Ls.new([:SHOW_DOTMATCH])
+    @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
   def test_one_hiddenfile_with_ascii_name
@@ -436,7 +436,7 @@ class LsNoOptionHiddenEntryTest < Minitest::Test
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
     @test_ls = Ls.new
-    @test_ls.entries = [@test_tools.test_dir]
+    @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
   def test_one_hiddenfile_with_ascii_name
@@ -487,8 +487,8 @@ class LsManyArgIncludeHiddenTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(['SHOW_DOTMATCH'])
-    @test_ls.entries = [@test_tools.test_dir]
+    @test_ls = Ls.new([:SHOW_DOTMATCH])
+    @test_ls.entries = ["#{@test_tools.test_dir}/"]
   end
 
   def test_many_file_args
@@ -507,28 +507,28 @@ class LsManyArgIncludeHiddenTest < Minitest::Test
 
   def test_many_vacant_dir_args
     expected = <<~TEXT
-      #{@test_tools.test_dir}/.test_dir1:
+      #{@test_tools.test_dir}/.test_dir1/:
       .
 
-      #{@test_tools.test_dir}/test_dir1:
+      #{@test_tools.test_dir}/test_dir1/:
       .
     TEXT
     @test_tools.create_tmp_dirs(1)
     @test_tools.create_tmp_dirs(1, is_hidden: true)
     @test_ls.entries = [
-      "#{@test_tools.test_dir}/.test_dir1",
-      "#{@test_tools.test_dir}/test_dir1"
+      "#{@test_tools.test_dir}/.test_dir1/",
+      "#{@test_tools.test_dir}/test_dir1/"
     ]
     assert_equal expected, @test_tools.capture_stdout(@test_ls)
   end
 
   def test_many_dir_args
     expected = <<~TEXT
-      #{@test_tools.test_dir}/.test_dir1:
+      #{@test_tools.test_dir}/.test_dir1/:
       .          test_file1 test_file3
       test_dir1  test_file2
 
-      #{@test_tools.test_dir}/test_dir1:
+      #{@test_tools.test_dir}/test_dir1/:
       .          test_file2 test_file5
       test_dir1  test_file3
       test_file1 test_file4
@@ -542,8 +542,8 @@ class LsManyArgIncludeHiddenTest < Minitest::Test
     @test_tools.create_tmp_dirs(1, sub_dir: 'test_dir1')
 
     @test_ls.entries = [
-      "#{@test_tools.test_dir}/.test_dir1",
-      "#{@test_tools.test_dir}/test_dir1"
+      "#{@test_tools.test_dir}/.test_dir1/",
+      "#{@test_tools.test_dir}/test_dir1/"
     ]
     assert_equal expected, @test_tools.capture_stdout(@test_ls)
   end
@@ -554,7 +554,7 @@ class LsManyArgIncludeHiddenTest < Minitest::Test
       #{@test_tools.test_dir}/.test_file2
       #{@test_tools.test_dir}/test_file1
 
-      #{@test_tools.test_dir}/.test_dir1:
+      #{@test_tools.test_dir}/.test_dir1/:
       .           .test_file3 test_file3
       .test_file1 test_file1  test_file4
       .test_file2 test_file2
@@ -569,7 +569,7 @@ class LsManyArgIncludeHiddenTest < Minitest::Test
       "#{@test_tools.test_dir}/.test_file1",
       "#{@test_tools.test_dir}/.test_file2",
       "#{@test_tools.test_dir}/test_file1",
-      "#{@test_tools.test_dir}/.test_dir1"
+      "#{@test_tools.test_dir}/.test_dir1/"
     ]
     assert_equal expected1, @test_tools.capture_stdout(@test_ls)
   end
@@ -585,7 +585,7 @@ class LsManyArgIncludeHiddenWithReverseTest < Minitest::Test
     # テストのために十分なコンソールの幅がなかった場合はエラーとする
     raise "テストに必要なコンソールの表示幅がありません。#{22 * 3}以上の幅を確保してください" if IO.console_size[1] < 66
 
-    @test_ls = Ls.new(%w[SHOW_DOTMATCH SORT_REVERSE])
+    @test_ls = Ls.new(%i[SHOW_DOTMATCH SORT_REVERSE])
     @test_ls.entries = [@test_tools.test_dir]
   end
 
@@ -609,7 +609,7 @@ class LsManyArgIncludeHiddenWithReverseTest < Minitest::Test
       #{@test_tools.test_dir}/.test_file2
       #{@test_tools.test_dir}/.test_file1
 
-      #{@test_tools.test_dir}/.test_dir1:
+      #{@test_tools.test_dir}/.test_dir1/:
       test_file4  test_file1  .test_file1
       test_file3  .test_file3 .
       test_file2  .test_file2
@@ -624,7 +624,7 @@ class LsManyArgIncludeHiddenWithReverseTest < Minitest::Test
       "#{@test_tools.test_dir}/.test_file1",
       "#{@test_tools.test_dir}/.test_file2",
       "#{@test_tools.test_dir}/test_file1",
-      "#{@test_tools.test_dir}/.test_dir1"
+      "#{@test_tools.test_dir}/.test_dir1/"
     ]
     assert_equal expected1, @test_tools.capture_stdout(@test_ls)
   end
