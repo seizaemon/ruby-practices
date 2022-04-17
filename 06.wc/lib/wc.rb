@@ -59,7 +59,7 @@ class Wc
   end
 
   def count_word
-    @input_str.scan(/\b[^\s]/).count
+    @input_str.scan(/\b*[^\s]+/).count
   end
 
   def count_byte

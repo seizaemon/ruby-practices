@@ -30,6 +30,36 @@ class WcSimpleTest < Minitest::Test
   end
 end
 
+class WcComplexTest < Minitest::Test
+  def test_count_case1
+    input = <<~TEXT
+      drwxr-xr-x  6 oden  staff  192  4 16 17:42 wctest
+    TEXT
+    test_wc = Wc.new(input)
+    expected = '       1       9      50'
+    assert_equal expected, test_wc.output
+  end
+
+  def test_count_case2
+    input = <<~TEXT
+      total 0
+      -rw-r--r--  1 oden  staff    0  2 19 23:11 test1
+      -rw-r--r--  1 oden  staff    0  2 19 23:11 test2
+      -rw-r--r--  1 oden  staff    0  2 19 23:11 test3
+      drwxr-xr-x  6 oden  staff  192  2 23 17:53 test_dir1
+      drwxr-xr-x  4 oden  staff  128  2 23 17:53 test_dir2
+      drwxr-xr-x  2 oden  staff   64  3 10 20:54 test_dir3
+      prw-r--r--  1 oden  staff    0  3 11 22:32 testfifo
+      lrwxr-xr-x  1 oden  staff   13  3 11 22:03 testlink -> testdir/test3
+      -rw-r--r--  1 oden  staff    0  2 19 23:11 テストファイル1
+      -rw-r--r--  1 oden  staff    0  2 19 23:11 テストファイル2
+    TEXT
+    test_wc = Wc.new(input)
+    expected = '      11      94     567'
+    assert_equal expected, test_wc.output
+  end
+end
+
 class WcJapaneseTest < Minitest::Test
   def setup
     input = <<~TEXT
