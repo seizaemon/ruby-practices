@@ -25,7 +25,8 @@ end
 
 def output_not_stdin(line_opt)
   init_argv_count = ARGV.count
-  totals = line_opt ? { line: 0 } : { line: 0, word: 0, byte: 0 }
+  totals = {}
+  totals.default = 0
 
   while ARGF.argv.count.positive?
     wc = Wc.new(ARGF.gets(nil), line_only: line_opt)
@@ -48,7 +49,8 @@ class Wc
   end
 
   def to_s
-    @result.keys.map { |k| format('%8d', @result[k]) }.join
+    keys = @line_only ? %i[line] : %i[line word byte]
+    keys.map { |k| format('%8d', @result[k]) }.join
   end
 
   def count
