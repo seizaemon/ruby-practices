@@ -16,62 +16,58 @@ def main
   # https://docs.ruby-lang.org/ja/latest/class/ARGF.html
   if ARGF.argv.count.zero?
     # 標準入力
-    wc = Wc.new(ARGF.gets(nil))
-    puts wc.output(line_only: line_opt)
+    wc = Wc.new(ARGF.gets(nil), line_only: line_opt)
+    puts wc
   else
     output_not_stdin(line_opt)
   end
 end
 
 def output_not_stdin(line_opt)
-  totals = line_opt ? { 'lines': 0, 'words': nil, 'bytes': nil } : { 'lines': 0, 'words': 0, 'bytes': 0 }
   init_argv_count = ARGV.count
+  totals = line_opt ? { line: 0 } : { line: 0, word: 0, byte: 0 }
 
   while ARGF.argv.count.positive?
-    wc = Wc.new(ARGF.gets(nil))
-    totals[:lines] += wc.lines
-    unless line_opt
-      totals[:words] += wc.words
-      totals[:bytes] += wc.bytes
-    end
-    puts "#{wc.output(line_only: line_opt)} #{ARGF.filename}"
+    wc = Wc.new(ARGF.gets(nil), line_only: line_opt)
+    puts "#{wc} #{ARGF.filename}"
+    wc.result.each_pair { |k, v| totals[k] += v }
     ARGF.skip
   end
-  puts "#{%i[lines words bytes].map { |key| format('%8d', totals[key]) if totals[key] }.join} total" if init_argv_count > 1
+  return if init_argv_count == 1
+
+  puts "#{totals.keys.map { |k| format('%8d', totals[k]) }.join} total"
 end
 
 class Wc
-  def initialize(input_str)
+  attr_reader :result
+
+  def initialize(input_str, line_only: false)
     @input_str = input_str
-    @lines = nil
-    @words = nil
-    @bytes = nil
+    @line_only = line_only
+    @result = count
   end
 
-  def output(line_only: false)
+  def to_s
+    @result.keys.map { |k| format('%8d', @result[k]) }.join
+  end
+
+  def count
+    @line_only ? { line: line_count } : { line: line_count, word: word_count, byte: byte_count }
+  end
+
+  def line_count
+    lines = @input_str.count("\n")
+    # ファイル末尾の空行の扱い（末尾の空行はカウントしない）
+    lines += 1 if @input_str.match?(/[^\n]\z/)
     lines
-    unless line_only
-      words
-      bytes
-    end
-    [@lines, @words, @bytes].map { |element| format('%8d', element) if element }.join
   end
 
-  def lines
-    @lines ||= begin
-      lines = @input_str.count("\n")
-      # ファイル末尾の空行の扱い（末尾の空行はカウントしない）
-      lines += 1 if @input_str.match?(/[^\n]\z/)
-      lines
-    end
+  def word_count
+    @input_str.scan(/\b*[^\s]+/).count
   end
 
-  def words
-    @words ||= @input_str.scan(/\b*[^\s]+/).count
-  end
-
-  def bytes
-    @bytes ||= @input_str.bytesize
+  def byte_count
+    @input_str.bytesize
   end
 end
 

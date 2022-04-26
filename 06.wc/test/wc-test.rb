@@ -16,17 +16,17 @@ class WcSimpleTest < Minitest::Test
 
   def test_count_line
     expected = 2
-    assert_equal expected, @test_wc.lines
+    assert_equal expected, @test_wc.line_count
   end
 
   def test_count_word
     expected = 3
-    assert_equal expected, @test_wc.words
+    assert_equal expected, @test_wc.word_count
   end
 
   def test_count_byte
     expected = 18
-    assert_equal expected, @test_wc.bytes
+    assert_equal expected, @test_wc.byte_count
   end
 end
 
@@ -37,7 +37,7 @@ class WcComplexTest < Minitest::Test
     TEXT
     test_wc = Wc.new(input)
     expected = '       1       9      50'
-    assert_equal expected, test_wc.output
+    assert_equal expected, test_wc.to_s
   end
 
   def test_count_case2
@@ -56,7 +56,7 @@ class WcComplexTest < Minitest::Test
     TEXT
     test_wc = Wc.new(input)
     expected = '      11      94     567'
-    assert_equal expected, test_wc.output
+    assert_equal expected, test_wc.to_s
   end
 end
 
@@ -71,17 +71,17 @@ class WcJapaneseTest < Minitest::Test
 
   def test_count_line
     expected = 2
-    assert_equal expected, @test_wc.lines
+    assert_equal expected, @test_wc.line_count
   end
 
   def test_count_word
     expected = 3
-    assert_equal expected, @test_wc.words
+    assert_equal expected, @test_wc.word_count
   end
 
   def test_count_byte
     expected = 33
-    assert_equal expected, @test_wc.bytes
+    assert_equal expected, @test_wc.byte_count
   end
 end
 
@@ -97,12 +97,18 @@ class WcOutputTest < Minitest::Test
 
   def test_output
     expected = '       3       6      36'
-    assert_equal expected, @test_wc.output
+    assert_equal expected, @test_wc.to_s
   end
 
   def test_output_with_option
+    input = <<~TEXT
+      test1 test2
+      test3
+      test4 test5 test6
+    TEXT
+    @test_wc = Wc.new(input, line_only: true)
     expected = '       3'
-    assert_equal expected, @test_wc.output(line_only: true)
+    assert_equal expected, @test_wc.to_s
   end
 end
 
@@ -117,12 +123,24 @@ class WcOutputJapaneseTest < Minitest::Test
   end
 
   def test_output
+    input = <<~TEXT
+      テスト1 テスト2
+      テスト3
+      テスト4 テスト5 テスト6
+    TEXT
+    @test_wc = Wc.new(input)
     expected = '       3       6      66'
-    assert_equal expected, @test_wc.output
+    assert_equal expected, @test_wc.to_s
   end
 
   def test_output_with_option
+    input = <<~TEXT
+      テスト1 テスト2
+      テスト3
+      テスト4 テスト5 テスト6
+    TEXT
+    @test_wc = Wc.new(input, line_only: true)
     expected = '       3'
-    assert_equal expected, @test_wc.output(line_only: true)
+    assert_equal expected, @test_wc.to_s
   end
 end
