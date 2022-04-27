@@ -36,8 +36,8 @@ class WcComplexTest < Minitest::Test
       drwxr-xr-x  6 oden  staff  192  4 16 17:42 wctest
     TEXT
     test_wc = Wc.new(input)
-    expected = '       1       9      50'
-    assert_equal expected, test_wc.to_s
+    expected = { line: 1, word: 9, byte: 50 }
+    assert_equal expected, test_wc.count_table
   end
 
   def test_count_case2
@@ -55,8 +55,8 @@ class WcComplexTest < Minitest::Test
       -rw-r--r--  1 oden  staff    0  2 19 23:11 テストファイル2
     TEXT
     test_wc = Wc.new(input)
-    expected = '      11      94     567'
-    assert_equal expected, test_wc.to_s
+    expected = { line: 11, word: 94, byte: 567 }
+    assert_equal expected, test_wc.count_table
   end
 end
 
@@ -96,8 +96,8 @@ class WcOutputTest < Minitest::Test
   end
 
   def test_output
-    expected = '       3       6      36'
-    assert_equal expected, @test_wc.to_s
+    expected = { line: 3, word: 6, byte: 36 }
+    assert_equal expected, @test_wc.count_table
   end
 
   def test_output_with_option
@@ -107,8 +107,8 @@ class WcOutputTest < Minitest::Test
       test4 test5 test6
     TEXT
     @test_wc = Wc.new(input, line_only: true)
-    expected = '       3'
-    assert_equal expected, @test_wc.to_s
+    expected = { line: 3 }
+    assert_equal expected, @test_wc.count_table
   end
 end
 
@@ -129,8 +129,8 @@ class WcOutputJapaneseTest < Minitest::Test
       テスト4 テスト5 テスト6
     TEXT
     @test_wc = Wc.new(input)
-    expected = '       3       6      66'
-    assert_equal expected, @test_wc.to_s
+    expected = { line: 3, word: 6, byte: 66 }
+    assert_equal expected, @test_wc.count_table
   end
 
   def test_output_with_option
@@ -140,7 +140,7 @@ class WcOutputJapaneseTest < Minitest::Test
       テスト4 テスト5 テスト6
     TEXT
     @test_wc = Wc.new(input, line_only: true)
-    expected = '       3'
-    assert_equal expected, @test_wc.to_s
+    expected = { line: 3 }
+    assert_equal expected, @test_wc.count_table
   end
 end

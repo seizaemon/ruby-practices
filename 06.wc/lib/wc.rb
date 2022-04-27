@@ -17,7 +17,7 @@ def main
   if ARGF.argv.count.zero?
     # 標準入力
     wc = Wc.new(ARGF.gets(nil), line_only: line_opt)
-    puts wc
+    puts format_wc(wc.count_table, line_opt)
   else
     output_not_stdin(line_opt)
   end
@@ -25,35 +25,34 @@ end
 
 def output_not_stdin(line_opt)
   init_argv_count = ARGV.count
-  totals = {}
-  totals.default = 0
+  totals = Hash.new(0)
 
   while ARGF.argv.count.positive?
     wc = Wc.new(ARGF.gets(nil), line_only: line_opt)
-    puts "#{wc} #{ARGF.filename}"
-    wc.result.each_pair { |k, v| totals[k] += v }
+    puts "#{format_wc(wc.count_table, line_opt)} #{ARGF.filename}"
+    wc.count_table.each_pair { |k, v| totals[k] += v }
     ARGF.skip
   end
   return if init_argv_count == 1
 
-  puts "#{totals.keys.map { |k| format('%8d', totals[k]) }.join} total"
+  puts "#{format_wc(totals, line_opt)} total"
+end
+
+def format_wc(count_hash, line_only)
+  keys = line_only ? %i[line] : %i[line word byte]
+  keys.map { |k| format('%8d', count_hash[k]) }.join
 end
 
 class Wc
-  attr_reader :result
+  attr_reader :count_table
 
   def initialize(input_str, line_only: false)
     @input_str = input_str
     @line_only = line_only
-    @result = count
+    @count_table = count_all
   end
 
-  def to_s
-    keys = @line_only ? %i[line] : %i[line word byte]
-    keys.map { |k| format('%8d', @result[k]) }.join
-  end
-
-  def count
+  def count_all
     @line_only ? { line: line_count } : { line: line_count, word: word_count, byte: byte_count }
   end
 
