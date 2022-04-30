@@ -16,7 +16,7 @@ def main
   # https://docs.ruby-lang.org/ja/latest/class/ARGF.html
   if ARGF.argv.count.zero?
     # 標準入力
-    wc = Wc.new(ARGF.gets(nil), line_only: line_opt)
+    wc = Wc.new(ARGF.gets(nil))
     puts format_wc(wc.count_table, line_opt)
   else
     output_not_stdin(line_opt)
@@ -24,16 +24,16 @@ def main
 end
 
 def output_not_stdin(line_opt)
-  init_argv_count = ARGV.count
+  file_count = ARGV.count
   totals = Hash.new(0)
 
   while ARGF.argv.count.positive?
-    wc = Wc.new(ARGF.gets(nil), line_only: line_opt)
+    wc = Wc.new(ARGF.gets(nil))
     puts "#{format_wc(wc.count_table, line_opt)} #{ARGF.filename}"
     wc.count_table.each_pair { |k, v| totals[k] += v }
     ARGF.skip
   end
-  return if init_argv_count == 1
+  return if file_count == 1
 
   puts "#{format_wc(totals, line_opt)} total"
 end
@@ -46,15 +46,16 @@ end
 class Wc
   attr_reader :count_table
 
-  def initialize(input_str, line_only: false)
+  def initialize(input_str)
     @input_str = input_str
-    @line_only = line_only
-    @count_table = count_all
+    @count_table = generate_count_table
   end
 
-  def count_all
-    @line_only ? { line: line_count } : { line: line_count, word: word_count, byte: byte_count }
+  def generate_count_table
+    { line: line_count, word: word_count, byte: byte_count }
   end
+
+  private
 
   def line_count
     lines = @input_str.count("\n")

@@ -99,17 +99,6 @@ class WcOutputTest < Minitest::Test
     expected = { line: 3, word: 6, byte: 36 }
     assert_equal expected, @test_wc.count_table
   end
-
-  def test_output_with_option
-    input = <<~TEXT
-      test1 test2
-      test3
-      test4 test5 test6
-    TEXT
-    @test_wc = Wc.new(input, line_only: true)
-    expected = { line: 3 }
-    assert_equal expected, @test_wc.count_table
-  end
 end
 
 class WcOutputJapaneseTest < Minitest::Test
@@ -130,17 +119,6 @@ class WcOutputJapaneseTest < Minitest::Test
     TEXT
     @test_wc = Wc.new(input)
     expected = { line: 3, word: 6, byte: 66 }
-    assert_equal expected, @test_wc.count_table
-  end
-
-  def test_output_with_option
-    input = <<~TEXT
-      テスト1 テスト2
-      テスト3
-      テスト4 テスト5 テスト6
-    TEXT
-    @test_wc = Wc.new(input, line_only: true)
-    expected = { line: 3 }
     assert_equal expected, @test_wc.count_table
   end
 end
