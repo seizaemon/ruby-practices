@@ -39,14 +39,14 @@ class FrameTest < Minitest::Test
     assert @frame.shots === { first: shots[0], second: nil }
   end
 
-  # フレームがストライクの場合のis_strike?のテスト
+  # フレームがストライクの場合is_strike?はtrueになる
   def test_is_strike?
     @frame.add_shot Shot.new('X')
 
     assert_equal @frame.is_strike?, true
   end
 
-  # フレームがストライクでない場合のis_strike?のテスト
+  # フレームがストライクでない場合is_strike?はfalseを返す
   def test_not_is_strike
     shots = [
       Shot.new(8),
@@ -57,7 +57,7 @@ class FrameTest < Minitest::Test
     assert_equal @frame.is_strike?, false
   end
 
-  # フレームがスペアの際のis_spare?のテスト
+  # フレームがスペアの際is_spare?はtrueを返す
   def test_is_spare_in_spare
     shots = [
       Shot.new(7),
@@ -68,7 +68,7 @@ class FrameTest < Minitest::Test
     assert_equal @frame.is_spare?, true
   end
 
-  # フレームがスペアでなくストライクでもない場合のis_spare?のテスト
+  # フレームがスペアでなくストライクでもない場合is_spare?はfalseになる
   def test_is_spare_in_normal
     shots = [
       Shot.new( 6),
@@ -79,21 +79,21 @@ class FrameTest < Minitest::Test
     assert_equal @frame.is_spare?, false
   end
 
-  # フレームがストライクの場合のis_spare?のテスト
+  # フレームがストライクの場合is_spare?はfalseになる
   def test_is_spare_in_strike
     @frame.add_shot Shot.new('X')
 
     assert_equal @frame.is_spare?, false
   end
 
-  # 1投目がストライクの場合のis_full?がtrueになる
+  # 1投目がストライクの場合のis_full?がtrueを返す
   def test_is_full_in_strike
     @frame.add_shot Shot.new('X')
 
     assert_equal @frame.is_full?, true
   end
 
-  # 二投目まで投げた場合is_full?はtrue
+  # 二投目まで投げた場合is_full?はtrueを返す
   def test_is_full?
     shots = [
       Shot.new(7),
@@ -104,49 +104,52 @@ class FrameTest < Minitest::Test
     assert_equal @frame.is_full?, true
   end
 
-  # 一投目だけの場合is_full?はfalseになる
+  # 一投目がストライクでない場合is_full?はfalseになる
   def test_is_not_full
     @frame.add_shot Shot.new(6)
 
     assert_equal @frame.is_full?, false
   end
 
-  # sum_of_pinsは倒したピンの合計を返す
+  # totalは倒したピンの合計を返す
   def test_total
     shots = [
       Shot.new(5),
       Shot.new(3)
     ]
-    shots.each {|s| @frame.add_shot(s)}
+    shots.each_index {|i, s| @frame.add_shot(shots[i])}
 
-    assert_equal @frame.total_pins, 8
+    assert_equal @frame.total, 8
   end
 
   # フレームがストライクの場合total_pinsは10を返す
   def test_total_in_strike
     @frame.add_shot Shot.new('X')
 
-    assert_equal @frame.total_pins, 10
+    assert_equal @frame.total, 10
   end
 
-  # first_pinsが2投の倒したピン数の合計を返す
-  # def test_first_pins
-  #   shots = [
-  #     Shot.new(8),
-  #     Shot.new(1)
-  #   ]
-  #   shots.each {|s| @frame.add_shot(s)}
-  #
-  #   assert_equal @frame.first_pins, 8
-  # end
+  # shot_in_firstは一本目で倒したピンの数を返す
+  def test_shot_in_first
+    shots = [
+      Shot.new(7),
+      Shot.new(2)
+    ]
+    shots.each {|s| @frame.add_shot(s)}
 
-  # ストライクの際のtotal_pinsはピン数10を返す
-  # def test_first_pins_in_strike
-  #   shot1 = Shot.new 'X'
-  #   @frame.add_shot(shot1)
-  #
-  #   assert_equal @frame.total_pins, 10
-  # end
+    assert_equal @frame.shot_in_first, 7
+  end
+
+  # shot_by_secondは二本目までに倒したピンの合計を返す
+  def test_shot_by_second
+    shots = [
+      Shot.new(7),
+      Shot.new(2)
+    ]
+    shots.each {|s| @frame.add_shot(s)}
+
+    assert_equal @frame.shot_in_first, 7
+  end
 end
 
 class LastFrameTest < Minitest::Test
@@ -239,5 +242,52 @@ class LastFrameTest < Minitest::Test
     [0,1].each {|i| @last_frame.add_shot(shots[i])}
 
     assert_equal @last_frame.is_strike?, false
+  end
+
+  # totalはスペアでない場合2投分の倒したピンの合計を返す
+  def test_total
+    shots = [
+      Shot.new(1),
+      Shot.new( 3)
+    ]
+    shots.each {|s| @last_frame.add_shot(s)}
+
+    assert_equal @last_frame.total, 4
+  end
+
+  # totalはスペアの場合3投分の倒したピンの合計を返す
+  def test_total_in_spare
+    shots = [
+      Shot.new(1),
+      Shot.new( 9),
+      Shot.new(8)
+    ]
+    shots.each {|s| @last_frame.add_shot(s)}
+
+    assert_equal @last_frame.total, 18
+  end
+
+  # shot_in_firstは一投目に倒したピンの数を返す
+  def test_shot_in_first
+    shots = [
+      Shot.new(1),
+      Shot.new( 9),
+      Shot.new(8)
+    ]
+    shots.each {|s| @last_frame.add_shot(s)}
+
+    assert_equal @last_frame.shot_in_first, 1
+  end
+
+  # shot_by_secondは二本目までに倒したピンの合計を返す
+  def test_shot_by_second
+    shots = [
+      Shot.new(7),
+      Shot.new(3),
+      Shot.new(8)
+    ]
+    shots.each {|s| @last_frame.add_shot(s)}
+
+    assert_equal @last_frame.shot_by_second, 10
   end
 end

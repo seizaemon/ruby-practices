@@ -5,20 +5,29 @@ require 'minitest/autorun'
 require_relative '../lib/shot'
 
 class ShotTest < Minitest::Test
-
-  # test 倒したピンの数を整数で入力するとその数を返す
-  # Shot クラスは1投で倒したピンの数を保持するだけの情報管理クラス
-  def test_hit_pins
-    shot = Shot.new(3)
-    assert_equal shot.pins, 3
+  def setup
+    @shot1 = Shot.new(3)
+    @shot2 = Shot.new(4)
+    @shot_strike = Shot.new('X')
   end
 
-  # test is_strike?のテスト
-  def test_is_strike?
-    strike = Shot.new('X')
-    not_strike = Shot.new(3)
+  # shotをto_iすると倒したピンの数を返す
+  def test_pins
+    assert_equal @shot1.to_i, 3
+  end
 
-    assert_equal strike.is_strike?, true
-    assert_equal not_strike.is_strike?, false
+  # ストライクの場合to_iは10を返す
+  def test_pins_in_strike
+    assert_equal @shot_strike.to_i, 10
+  end
+
+  # ストライクの際is_strike?はtrueを返す
+  def test_is_strike
+    assert @shot_strike.is_strike?
+  end
+
+  #ストライクでない場合is_strike?はfalseを返す
+  def test_is_strike_in_not_strike
+    assert_equal @shot1.is_strike?, false
   end
 end

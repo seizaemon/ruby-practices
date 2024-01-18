@@ -8,35 +8,43 @@ class Frame
   end
 
   def is_full?
-    return true if self.is_strike?
-    # これもリファクタできそう
-    not @shots.slice(:first, :second).values.include? nil
+    return true if self.is_strike_at(:first)
+    not self.is_included_nil_in_2shot
   end
 
   def is_strike?
-    self.is_strike_at_shot?(:first)
+    self.is_strike_at(:first)
   end
 
   def is_spare?
-    return false if @shots.slice(:first, :second).values.include? nil
-    self.total_pins == 10
+    return false if self.is_included_nil_in_2shot
+    self.total == 10
   end
 
   def add_shot(shot)
     self.add shot unless self.is_full?
   end
 
-  def total_pins
-    @shots.compact.values.map do |shot|
-      return 10 if shot.is_strike?
-      shot.pins
-    end.sum
+  def total
+    @shots.compact.values.sum {|e| e.to_i }
+  end
+
+  def shot_in_first
+    @shots[:first].to_i
+  end
+
+  def shot_by_second
+    @shots.slice(:first, :second).values.sum {|e| e.to_i }
   end
 
   private
 
-  def is_strike_at_shot?(at_when)
+  def is_strike_at(at_when)
     not @shots[at_when].nil? and @shots[at_when].is_strike?
+  end
+
+  def is_included_nil_in_2shot
+    @shots.slice(:first, :second).values.include? nil
   end
 
   def add(current_shot)
@@ -56,11 +64,11 @@ class LastFrame < Frame
   end
 
   def is_strike?
-    super and self.is_strike_at_shot?(:second)
+    super and self.is_strike_at(:second)
   end
 
   def is_full?
-    return false if @shots.slice(:first, :second).values.include? nil
+    return false if self.is_included_nil_in_2shot
     return false if self.is_strike? or self.is_spare?
     true
   end
