@@ -1,79 +1,59 @@
 # frozen_string_literal: true
 
 class Frame
-  attr_reader :shots
-
   def initialize
-    @shots = { first: nil, second: nil }
-  end
-
-  def is_full?
-    return true if self.is_strike_at(:first)
-    not self.is_included_nil_in_2shot
+    @shots = Array.new
+    @shots_max_length = 2
   end
 
   def is_strike?
-    self.is_strike_at(:first)
+    @shots.length == @shots_max_length-1 and @shots.map {|shot| shot.is_strike?}.all?
+  end
+
+  def is_full?
+    return true if self.is_strike?
+    @shots.length == @shots_max_length
   end
 
   def is_spare?
-    return false if self.is_included_nil_in_2shot
-    self.total == 10
+    return false if self.is_strike?
+    self.total_by_second == 10
   end
 
   def add_shot(shot)
-    self.add shot unless self.is_full?
+    @shots << shot unless self.is_full?
   end
 
   def total
-    @shots.compact.values.sum {|e| e.to_i }
+    slice_total_score @shots_max_length
   end
 
-  def shot_in_first
-    @shots[:first].to_i
+  def first_score
+    slice_total_score 1
   end
 
-  def shot_by_second
-    @shots.slice(:first, :second).values.sum {|e| e.to_i }
+  def total_by_second
+    slice_total_score 2
   end
 
   private
 
-  def is_strike_at(at_when)
-    not @shots[at_when].nil? and @shots[at_when].is_strike?
-  end
-
-  def is_included_nil_in_2shot
-    @shots.slice(:first, :second).values.include? nil
-  end
-
-  def add(current_shot)
-    @shots.each do |k, v|
-      if v.nil?
-        @shots[k] = current_shot
-        break
-      end
-    end
+  def slice_total_score(nth_shot)
+    @shots.slice(0..nth_shot-1).map {|shot| shot.score }.sum
   end
 end
 
 class LastFrame < Frame
   def initialize
     super
-    @shots[:third] = nil
-  end
-
-  def is_strike?
-    super and self.is_strike_at(:second)
+    @shots_max_length = 3
   end
 
   def is_full?
-    return false if self.is_included_nil_in_2shot
-    return false if self.is_strike? or self.is_spare?
-    true
-  end
-
-  def add_shot(shot)
-    self.add shot unless self.is_full?
+    if self.is_strike? or self.is_spare?
+      true if @shots.length == @shots_max_length
+    else
+      true if @shots.length == @shots_max_length-1
+    end
   end
 end
