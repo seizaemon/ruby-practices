@@ -11,12 +11,12 @@ class ShotTest < Minitest::Test
     @shot_strike = Shot.new('X')
   end
 
-  # shotをto_iすると倒したピンの数を返す
+  # scoreはピンの数を返す
   def test_score
     assert_equal @shot1.score, 3
   end
 
-  # ストライクの場合to_iは10を返す
+  # ストライクの場合scoreは10を返す
   def test_score_in_strike
     assert_equal @shot_strike.score, 10
   end

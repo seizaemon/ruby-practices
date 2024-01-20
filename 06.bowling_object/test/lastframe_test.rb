@@ -167,7 +167,7 @@ class LastFrameTest < Minitest::Test
     ]
     shots.each {|s| @last_frame.add_shot(s)}
 
-    assert_equal @last_frame.total, 4
+    assert_equal @last_frame.score, 4
   end
 
   # totalはスペアの場合3投分の倒したピンの合計を返す
@@ -179,7 +179,7 @@ class LastFrameTest < Minitest::Test
     ]
     shots.each {|s| @last_frame.add_shot(s)}
 
-    assert_equal @last_frame.total, 18
+    assert_equal @last_frame.score, 18
   end
 
   # shot_in_firstは一投目に倒したピンの数を返す
@@ -191,7 +191,7 @@ class LastFrameTest < Minitest::Test
     ]
     shots.each {|s| @last_frame.add_shot(s)}
 
-    assert_equal @last_frame.first_score, 1
+    assert_equal @last_frame.score_at_first, 1
   end
 
   # shot_by_secondは二本目までに倒したピンの合計を返す
@@ -203,6 +203,6 @@ class LastFrameTest < Minitest::Test
     ]
     shots.each {|s| @last_frame.add_shot(s)}
 
-    assert_equal @last_frame.total_by_second, 10
+    assert_equal @last_frame.score_by_second, 10
   end
 end

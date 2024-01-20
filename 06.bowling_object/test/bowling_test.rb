@@ -2,9 +2,6 @@
 
 # frozen_string_literal: true
 require 'minitest/autorun'
-require 'stringio'
-
-
 
 class BowlingTest < Minitest::Test
 
@@ -15,7 +12,7 @@ class BowlingTest < Minitest::Test
     r.gets.to_i
   end
 
-  # 適当に生成したボーリングのスコア表から正しいスコアを計算する
+  # 課題にあった倒したピンの引数からスコアが正しく計算できる
   def test_bowling_score_pattern1
     args = '6,3,9,0,0,3,8,2,7,3,X,9,1,8,0,X,6,4,5'
 

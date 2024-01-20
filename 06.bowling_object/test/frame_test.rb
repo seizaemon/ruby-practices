@@ -16,6 +16,14 @@ class FrameTest < Minitest::Test
     @frame = TestFrame.new
   end
 
+  # add_shotはShotオブジェクトをFrameオブジェクトに追加する
+  def test_add_shot
+    shot = Shot.new 6
+    @frame.add_shot shot
+
+    assert @frame.shots[0] === shot
+  end
+
   # 1投目がストライクの場合のis_full?がtrueを返す
   def test_is_full_in_strike
     @frame.shots << Shot.new('X')
@@ -24,9 +32,12 @@ class FrameTest < Minitest::Test
   end
 
   # 1投目がストライクでなく2投目まで投げた場合is_full?はtrueを返す
-  def test_is_full?
-    @frame.shots << Shot.new(7)
-    @frame.shots << Shot.new(2)
+  def test_is_full
+    shots = [
+      Shot.new(7),
+      Shot.new(2)
+    ]
+    shots.each {|s| @frame.add_shot(s)}
 
     assert_equal @frame.is_full?, true
   end
@@ -36,13 +47,6 @@ class FrameTest < Minitest::Test
     @frame.shots << Shot.new(6)
 
     assert_equal @frame.is_full?, false
-  end
-
-  def test_add_shot
-    shot = Shot.new(6)
-    @frame.add_shot shot
-
-    assert @frame.shots[0] === shot
   end
 
   # フレームがストライク（1投目ストライク）の場合is_strike?はtrueになる

@@ -7,7 +7,7 @@ require_relative '../lib/frame'
 require_relative '../lib/shot'
 
 class TestGame < Game
-  attr_accessor :frames
+  attr_reader :frames
 end
 
 class GameTest < Minitest::Test

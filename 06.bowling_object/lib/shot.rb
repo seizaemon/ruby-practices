@@ -14,14 +14,10 @@ class Shot
     @pins
   end
 
-  def remain
-    @max_pins - @pins
-  end
-
   private
   def convert(pins)
     return 10 if pins == 'X'
-    pins
+    pins.to_i
   end
 end
 
