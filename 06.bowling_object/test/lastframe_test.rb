@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # frozen_string_literal: true
 
 require 'minitest/autorun'
@@ -6,7 +5,7 @@ require_relative '../lib/shot'
 require_relative '../lib/frame'
 
 class TestLastFrame < LastFrame
-  attr_accessor :shots
+  attr_reader :shots
 end
 
 class LastFrameTest < Minitest::Test
@@ -37,9 +36,6 @@ class LastFrameTest < Minitest::Test
       Shot.new(5)
     ]
     shots.each {|s| @last_frame.shots << s}
-
-    print @last_frame.is_strike?
-    print @last_frame.is_spare?
 
     assert @last_frame.is_full?
   end

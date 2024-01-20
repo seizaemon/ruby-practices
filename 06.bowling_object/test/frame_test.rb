@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # frozen_string_literal: true
 
 require 'minitest/autorun'
@@ -6,7 +5,6 @@ require_relative '../lib/shot'
 require_relative '../lib/frame'
 
 class TestFrame < Frame
-  attr_writer :shots
   attr_reader :shots
 end
 
