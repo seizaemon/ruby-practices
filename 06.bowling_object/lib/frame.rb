@@ -7,7 +7,7 @@ class Frame
   end
 
   def is_strike?
-    @shots.length == @shots_max_length-1 and self.is_all_strike_by 1
+    not @shots[0].nil? and @shots[0].is_strike?
   end
 
   def is_full?
@@ -17,30 +17,26 @@ class Frame
 
   def is_spare?
     return false if self.is_strike?
-    self.total_by_second == 10
+    self.score_by_second == 10
   end
 
   def add_shot(shot)
     @shots << shot unless self.is_full?
   end
 
-  def total
+  def score
     slice_total_score @shots_max_length
   end
 
-  def first_score
+  def score_at_first
     slice_total_score 1
   end
 
-  def total_by_second
+  def score_by_second
     slice_total_score 2
   end
 
   private
-
-  def is_all_strike_by(nth_shot)
-    @shots.slice(0..nth_shot-1).map {|shot| shot.is_strike?}.all?
-  end
 
   def slice_total_score(nth_shot)
     @shots.slice(0..nth_shot-1).map {|shot| shot.score }.sum
@@ -51,11 +47,6 @@ class LastFrame < Frame
   def initialize
     super
     @shots_max_length = 3
-  end
-
-  def is_strike?
-    return true if self.is_all_strike_by 2
-    false
   end
 
   def is_full?

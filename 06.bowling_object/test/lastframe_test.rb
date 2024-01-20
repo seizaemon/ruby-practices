@@ -6,8 +6,7 @@ require_relative '../lib/shot'
 require_relative '../lib/frame'
 
 class TestLastFrame < LastFrame
-  attr_reader :shots
-  attr_writer :shots
+  attr_accessor :shots
 end
 
 class LastFrameTest < Minitest::Test
@@ -15,11 +14,26 @@ class LastFrameTest < Minitest::Test
     @last_frame = TestLastFrame.new
   end
 
-  # 2投目まで連続ストライクの場合3投目も投げてis_fullがtrueになる
+  # 2投目まででスペアでない場合is_fullがtrueとなる
+  def test_is_full_in_normal
+    shots = [
+      Shot.new( 2),
+      Shot.new(5)
+    ]
+
+    # 初期値のテスト
+    assert_equal @last_frame.is_full?, false
+
+    shots.each {|s| @last_frame.shots << s}
+
+    assert @last_frame.is_full?
+  end
+
+  # 1投目がストライクの場合3投目まで投げてis_fullがtrueになる
   def test_is_full_in_two_strike
     shots = [
       Shot.new('X'),
-      Shot.new( 'X'),
+      Shot.new( 2),
       Shot.new(5)
     ]
     shots.each {|s| @last_frame.shots << s}
@@ -28,6 +42,17 @@ class LastFrameTest < Minitest::Test
     print @last_frame.is_spare?
 
     assert @last_frame.is_full?
+  end
+
+  # 1投目がストライクの場合2投目までだとis_fullがfalseのまま
+  def test_is_full_not_full_in_strike
+    shots = [
+      Shot.new('X'),
+      Shot.new( 2)
+    ]
+    shots.each {|s| @last_frame.shots << s}
+
+    assert_equal @last_frame.is_full?, false
   end
 
   # 二投目まででスペア場合3投まで満たしてis_fullがtrueになる
@@ -42,11 +67,22 @@ class LastFrameTest < Minitest::Test
     assert @last_frame.is_full?
   end
 
-  # 二投目まで連続でストライクの場合3投までshotを受け入れる(add_testのテスト)
+  # 二投目まででスペア場合2投までだとis_fullがfalseのまま
+  def test_is_full_not_full_in_spare
+    shots = [
+      Shot.new(3),
+      Shot.new( 7)
+    ]
+    shots.each {|s| @last_frame.shots << s}
+
+    assert_equal @last_frame.is_full?, false
+  end
+
+  # 1投目がストライクの場合3投までshotを受け入れる(add_testのテスト)
   def test_accept_three_shot_in_strike
     shots = [
       Shot.new('X'),
-      Shot.new( 'X'),
+      Shot.new( 3),
       Shot.new(5)
     ]
     shots.each {|s| @last_frame.add_shot(s)}

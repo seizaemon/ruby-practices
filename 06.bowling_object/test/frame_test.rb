@@ -104,32 +104,32 @@ class FrameTest < Minitest::Test
   end
 
   # totalは倒したピンの合計を返す
-  def test_total
+  def test_score
     shots = [
       Shot.new(5),
       Shot.new(3)
     ]
     shots.each {|s| @frame.add_shot(s)}
 
-    assert_equal @frame.total, 8
+    assert_equal @frame.score, 8
   end
 
   # フレームがストライクの場合total_pinsは10を返す
   def test_total_in_strike
     @frame.add_shot Shot.new('X')
 
-    assert_equal @frame.total, 10
+    assert_equal @frame.score, 10
   end
 
-  # shot_in_firstは一本目で倒したピンの数を返す
-  def test_shot_in_first
+  # score_at_firstは一本目で倒したピンの数を返す
+  def test_score_at_first
     shots = [
       Shot.new(7),
       Shot.new(2)
     ]
     shots.each {|s| @frame.add_shot(s)}
 
-    assert_equal @frame.first_score, 7
+    assert_equal @frame.score_at_first, 7
   end
 
   # shot_by_secondは二本目までに倒したピンの合計を返す
@@ -140,6 +140,6 @@ class FrameTest < Minitest::Test
     ]
     shots.each {|s| @frame.add_shot(s)}
 
-    assert_equal @frame.total_by_second, 9
+    assert_equal @frame.score_by_second, 9
   end
 end
