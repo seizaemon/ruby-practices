@@ -3,7 +3,6 @@
 class Shot
   def initialize(pins)
     @pins = convert(pins)
-    @max_pins = 10
   end
 
   def is_strike?

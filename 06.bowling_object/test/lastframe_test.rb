@@ -15,14 +15,12 @@ class LastFrameTest < Minitest::Test
 
   # 2投目まででスペアでない場合is_fullがtrueとなる
   def test_is_full_in_normal
+    # 初期値のテスト
+    assert_equal @last_frame.is_full?, false
     shots = [
       Shot.new( 2),
       Shot.new(5)
     ]
-
-    # 初期値のテスト
-    assert_equal @last_frame.is_full?, false
-
     shots.each {|s| @last_frame.shots << s}
 
     assert @last_frame.is_full?
@@ -51,7 +49,7 @@ class LastFrameTest < Minitest::Test
     assert_equal @last_frame.is_full?, false
   end
 
-  # 二投目まででスペア場合3投まで満たしてis_fullがtrueになる
+  # 二投目まででスペアの場合3投まで満たしてis_fullがtrueになる
   def test_is_full_in_spare
     shots = [
       Shot.new(3),
@@ -75,31 +73,31 @@ class LastFrameTest < Minitest::Test
   end
 
   # 1投目がストライクの場合3投までshotを受け入れる(add_testのテスト)
-  def test_accept_three_shot_in_strike
+  def test_add_shot_accept_three_shot_in_strike
     shots = [
       Shot.new('X'),
       Shot.new( 3),
       Shot.new(5)
     ]
-    shots.each {|s| @last_frame.add_shot(s)}
+    shots.each {|s| @last_frame.add_shot s}
 
     assert @last_frame.shots === [shots[0], shots[1], shots[2]]
   end
 
   # 二投目まででスペアの場合3投までshotを受け入れる(add_testのテスト)
-  def test_accept_three_shot_in_spare
+  def test_add_shot_accept_three_shot_in_spare
     shots = [
       Shot.new(3),
       Shot.new( 7),
       Shot.new(5)
     ]
-    shots.each {|s| @last_frame.add_shot(s)}
+    shots.each {|s| @last_frame.add_shot s}
 
     assert @last_frame.shots === [shots[0], shots[1], shots[2]]
   end
 
   # 二投目まででスペアまたはストライクでない場合2投までshotを受け入れる(add_testのテスト)
-  def test_accept_least_two_shot
+  def test_add_shot_accept_least_two_shot
     shots = [
       Shot.new(3),
       Shot.new( 6),
@@ -117,18 +115,14 @@ class LastFrameTest < Minitest::Test
       Shot.new(3),
       Shot.new( 7)
     ]
-    [0,1].each {|i| @last_frame.add_shot(shots[i])}
+    shots.each {|s| @last_frame.shots << s}
 
     assert_equal @last_frame.is_spare?, true
   end
 
-  # 1投目2投目がストライクの場合is_strikeがtrueとなる
+  # 1投目がストライクの場合is_strikeがtrueとなる
   def test_is_full_in_strike
-    shots = [
-      Shot.new('X'),
-      Shot.new( 'X')
-    ]
-    [0,1].each {|i| @last_frame.add_shot(shots[i])}
+    @last_frame.add_shot Shot.new('X')
 
     assert_equal @last_frame.is_strike?, true
   end
@@ -139,7 +133,7 @@ class LastFrameTest < Minitest::Test
       Shot.new(1),
       Shot.new( 3)
     ]
-    [0,1].each {|i| @last_frame.add_shot(shots[i])}
+    shots.each {|s| @last_frame.shots << s}
 
     assert_equal @last_frame.is_spare?, false
   end
@@ -150,54 +144,54 @@ class LastFrameTest < Minitest::Test
       Shot.new(1),
       Shot.new( 3)
     ]
-    [0,1].each {|i| @last_frame.add_shot(shots[i])}
+    shots.each {|s| @last_frame.shots << s}
 
     assert_equal @last_frame.is_strike?, false
   end
 
-  # totalはスペアでない場合2投分の倒したピンの合計を返す
-  def test_total
+  # scoreはスペアの場合2投分の倒したピンの合計を返す
+  def test_score
     shots = [
       Shot.new(1),
       Shot.new( 3)
     ]
-    shots.each {|s| @last_frame.add_shot(s)}
+    shots.each {|s| @last_frame.shots << s}
 
     assert_equal @last_frame.score, 4
   end
 
-  # totalはスペアの場合3投分の倒したピンの合計を返す
-  def test_total_in_spare
+  # scoreは3投分の倒したピンの合計を返す
+  def test_score_in_spare
     shots = [
       Shot.new(1),
       Shot.new( 9),
       Shot.new(8)
     ]
-    shots.each {|s| @last_frame.add_shot(s)}
+    shots.each {|s| @last_frame.shots << s}
 
     assert_equal @last_frame.score, 18
   end
 
-  # shot_in_firstは一投目に倒したピンの数を返す
+  # shot_in_firstはShotが3つ入った状態でも一投目に倒したピンの数を返す
   def test_shot_in_first
     shots = [
       Shot.new(1),
       Shot.new( 9),
       Shot.new(8)
     ]
-    shots.each {|s| @last_frame.add_shot(s)}
+    shots.each {|s| @last_frame.shots << s}
 
     assert_equal @last_frame.score_at_first, 1
   end
 
-  # shot_by_secondは二本目までに倒したピンの合計を返す
+  # shot_by_secondはShotが3つ入った状態でも二本目までに倒したピンの合計を返す
   def test_shot_by_second
     shots = [
       Shot.new(7),
       Shot.new(3),
       Shot.new(8)
     ]
-    shots.each {|s| @last_frame.add_shot(s)}
+    shots.each {|s| @last_frame.shots << s}
 
     assert_equal @last_frame.score_by_second, 10
   end

@@ -6,7 +6,7 @@ require_relative '../lib/frame'
 require_relative '../lib/shot'
 
 class TestGame < Game
-  attr_reader :frames
+  attr_accessor :frames
 end
 
 class GameTest < Minitest::Test
@@ -15,36 +15,45 @@ class GameTest < Minitest::Test
     @game = TestGame.new
   end
 
-  def create_frames(pins)
+  def create_frames(pins_ary)
     (1..9).map do
       frame = Frame.new
       until frame.is_full?
-        frame.add_shot Shot.new(pins.shift)
+        frame.add_shot Shot.new(pins_ary.shift)
       end
       frame
     end
   end
 
-  def create_last_frames(pins)
+  def create_last_frames(pins_ary)
     last_frame = LastFrame.new
     until last_frame.is_full?
-      last_frame.add_shot Shot.new(pins.shift)
+      last_frame.add_shot Shot.new(pins_ary.shift)
     end
     last_frame
   end
 
-  # ３が入った配列をフレーム数要素分作成
   def fill_pins(num_frames)
+    # 3を入れているのはスコア計算をしやすくするため
     (1..num_frames*2).map { 3 }
   end
 
-  # フレーム9個と最終フレーム1個を代入できる
-  def test_input_frame
+  # add_frameはフレーム9個と最終フレーム1個を代入できる
+  def test_add_frame
     frames = create_frames(fill_pins(9))
     frames << create_last_frames([3,3])
     frames.each {|frame| @game.add_frame(frame)}
 
     frames.each_index {|i| assert @game.frames[i] === frames[i] }
+  end
+
+  # add_frameはフレーム10個以上は入らない
+  def test_add_frame_in_too_much_frames
+    frames = create_frames(fill_pins(11))
+    frames.each {|frame| @game.add_frame(frame)}
+
+    (0..9).each {|i| assert @game.frames[i] === frames[i] }
+    assert @game.frames[10].nil?
   end
 
   # フレーム9個と最終フレーム1個を代入してis_fullがtrueになる
@@ -59,7 +68,7 @@ class GameTest < Minitest::Test
   # フレームが足りなかったらis_fullがfalseのまま
   def test_is_full_not_fill
     frames = create_frames(fill_pins(9))
-    frames.each {|frame| @game.add_frame(frame)}
+    frames.each {|f| @game.frames << f}
 
     assert_equal @game.is_full?, false
   end
@@ -68,7 +77,7 @@ class GameTest < Minitest::Test
   def test_total_score_in_normal
     frames = create_frames(fill_pins(9))
     frames << create_last_frames([3,3])
-    frames.each {|f| @game.add_frame f}
+    frames.each {|f| @game.frames << f}
 
     # 全て3本ずつ倒すケースを考える  3ピン x 2投 x 10フレーム = 60点
     assert_equal @game.score, 60
@@ -78,7 +87,7 @@ class GameTest < Minitest::Test
   def test_total_score_in_spare
     frames = create_frames([3, 7] + fill_pins(8))
     frames << create_last_frames([3,3])
-    frames.each {|f| @game.add_frame f}
+    frames.each {|f| @game.frames << f}
 
     # 1フレームのみスペアが含まれるケースの計算
     # 1投目のスコアが 3+7+3=13となるため 13+(3本x2投x9フレーム）= 67
@@ -89,7 +98,7 @@ class GameTest < Minitest::Test
   def test_total_score_in_strike
     frames = create_frames(['X'] + fill_pins(8))
     frames << create_last_frames([3,3])
-    frames.each {|f| @game.add_frame(f)}
+    frames.each {|f| @game.frames << f}
 
     # 1フレームのみストライクが含まれるケースの計算
     # 1投目のスコアが 10+3+3=16となるため 16+(3本x2投x9フレーム）= 70
@@ -100,7 +109,7 @@ class GameTest < Minitest::Test
   def test_score_in_spare_at_last
     frames = create_frames(fill_pins(9))
     frames << create_last_frames([4, 6, 5])
-    frames.each {|f| @game.add_frame(f)}
+    frames.each {|f| @game.frames << f}
 
     # 3ピン x 2投 x 9フレーム + 4 + 6 + 5 = 69
     assert_equal @game.score, 69
@@ -110,7 +119,7 @@ class GameTest < Minitest::Test
   def test_score_in_strike_at_last
     frames = create_frames(fill_pins(9))
     frames << create_last_frames(%w[X X X])
-    frames.each {|f| @game.add_frame f}
+    frames.each {|f| @game.frames << f}
 
     # 3ピン x 2投 x 9フレーム + 10 + 10 + 10 = 84
     assert_equal @game.score, 84
@@ -120,7 +129,7 @@ class GameTest < Minitest::Test
   def test_score_in_continuous_strike
     frames = create_frames(['X', 'X', 5, 3] + fill_pins(6))
     frames << create_last_frames([3,3])
-    frames.each {|f| @game.add_frame f}
+    frames.each {|f| @game.frames << f}
 
     # フレーム1: 10+10+5=25 フレーム2: 10+5+3=18 フレーム3: 5+3=8 残り 3x2x7=42 合計93
     assert_equal @game.score, 93
@@ -130,7 +139,7 @@ class GameTest < Minitest::Test
   def test_score_in_continuous_strike_before_last
     frames = create_frames(fill_pins(8) + ['X'])
     frames << create_last_frames(['X', 5, 5])
-    frames.each {|f| @game.add_frame f}
+    frames.each {|f| @game.frames << f}
 
     # フレーム9: 10+10+5=25 フレーム10: 10+5+5=20 残り 3x2x8=48 合計93
     assert_equal @game.score, 93

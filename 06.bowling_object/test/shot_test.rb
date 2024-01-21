@@ -5,14 +5,13 @@ require_relative '../lib/shot'
 
 class ShotTest < Minitest::Test
   def setup
-    @shot1 = Shot.new(3)
-    @shot2 = Shot.new(4)
+    @shot_normal = Shot.new('3')
     @shot_strike = Shot.new('X')
   end
 
   # scoreはピンの数を返す
   def test_score
-    assert_equal @shot1.score, 3
+    assert_equal @shot_normal.score, 3
   end
 
   # ストライクの場合scoreは10を返す
@@ -27,6 +26,6 @@ class ShotTest < Minitest::Test
 
   #ストライクでない場合is_strike?はfalseを返す
   def test_is_strike_in_not_strike
-    assert_equal @shot1.is_strike?, false
+    assert_equal @shot_normal.is_strike?, false
   end
 end

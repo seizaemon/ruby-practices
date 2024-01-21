@@ -25,20 +25,20 @@ class Frame
   end
 
   def score
-    slice_total_score @shots_max_length
+    sliced_total_score @shots_max_length
   end
 
   def score_at_first
-    slice_total_score 1
+    sliced_total_score 1
   end
 
   def score_by_second
-    slice_total_score 2
+    sliced_total_score 2
   end
 
   private
 
-  def slice_total_score(nth_shot)
+  def sliced_total_score(nth_shot)
     @shots.slice(0..nth_shot-1).map {|shot| shot.score }.sum
   end
 end
