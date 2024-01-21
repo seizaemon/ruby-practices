@@ -21,11 +21,11 @@ class ShotTest < Minitest::Test
 
   # ストライクの際is_strike?はtrueを返す
   def test_is_strike
-    assert @shot_strike.is_strike?
+    assert @shot_strike.strike?
   end
 
-  #ストライクでない場合is_strike?はfalseを返す
+  # ストライクでない場合is_strike?はfalseを返す
   def test_is_strike_in_not_strike
-    assert_equal @shot_normal.is_strike?, false
+    assert_equal @shot_normal.strike?, false
   end
 end

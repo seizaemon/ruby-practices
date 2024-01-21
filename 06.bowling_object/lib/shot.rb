@@ -5,7 +5,7 @@ class Shot
     @pins = convert(pins)
   end
 
-  def is_strike?
+  def strike?
     @pins == 10
   end
 
@@ -14,9 +14,10 @@ class Shot
   end
 
   private
+
   def convert(pins)
     return 10 if pins == 'X'
+
     pins.to_i
   end
 end
-

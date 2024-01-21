@@ -1,12 +1,11 @@
-#frozen_string_literal: true
-#
+# frozen_string_literal: true
+
 require 'minitest/autorun'
 
 class BowlingTest < Minitest::Test
-
   def capture_stdout(arg_string)
     r, w = IO.pipe
-    system "ruby ../bowling.rb #{arg_string}", :chdir=>__dir__, :out=>w
+    system "ruby ../bowling.rb #{arg_string}", chdir: __dir__, out: w
     w.close
     r.gets.to_i
   end

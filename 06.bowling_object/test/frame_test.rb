@@ -9,47 +9,36 @@ class TestFrame < Frame
 end
 
 class FrameTest < Minitest::Test
-
   def setup
     @frame = TestFrame.new
   end
 
   # add_shotはShotオブジェクトをFrameオブジェクトに順に追加する
   def test_add_shot
-    shots = [
-      Shot.new(6),
-      Shot.new(3)
-    ]
+    shots = [Shot.new(6), Shot.new(3)]
 
     @frame.add_shot shots[0]
-    assert @frame.shots[0] === shots[0]
+    assert_same @frame.shots[0], shots[0]
     @frame.add_shot shots[1]
-    assert @frame.shots[1] === shots[1]
+    assert_same @frame.shots[1], shots[1]
   end
 
   # add_shotは2投以上は受け入れない
   def test_add_shot_in_too_much_shots
-    shots = [
-      Shot.new(6),
-      Shot.new(3),
-      Shot.new(1)
-    ]
-    shots.each {|s| @frame.add_shot s}
+    shots = [Shot.new(6), Shot.new(3), Shot.new(1)]
+    shots.each { |shot| @frame.add_shot shot }
 
-    assert @frame.shots[0] === shots[0]
-    assert @frame.shots[1] === shots[1]
+    assert_same @frame.shots[0], shots[0]
+    assert_same @frame.shots[1], shots[1]
     assert @frame.shots[2].nil?
   end
 
   # add_shotは1投目がストライクの場合それ以上Shotオブジェクトを受け入れない
   def test_add_shot_in_strike
-    shots = [
-      Shot.new('X'),
-      Shot.new(3)
-    ]
-    shots.each {|s| @frame.add_shot s}
+    shots = [Shot.new('X'), Shot.new(3)]
+    shots.each { |shot| @frame.add_shot shot }
 
-    assert @frame.shots[0] === shots[0]
+    assert_same @frame.shots[0], shots[0]
     assert @frame.shots[1].nil?
   end
 
@@ -57,81 +46,66 @@ class FrameTest < Minitest::Test
   def test_is_full_in_strike
     @frame.shots << Shot.new('X')
 
-    assert_equal @frame.is_full?, true
+    assert_equal @frame.full?, true
   end
 
   # 1投目がストライクでなく2投目まで投げた場合is_full?はtrueを返す
   def test_is_full
-    shots = [
-      Shot.new(7),
-      Shot.new(2)
-    ]
-    shots.each {|s| @frame.shots << s}
+    shots = [Shot.new(7), Shot.new(2)]
+    shots.each { |shot| @frame.shots << shot }
 
-    assert_equal @frame.is_full?, true
+    assert_equal @frame.full?, true
   end
 
   # 一投目がストライクでない場合is_full?はfalseになる
   def test_is_not_full
     @frame.shots << Shot.new(6)
 
-    assert_equal @frame.is_full?, false
+    assert_equal @frame.full?, false
   end
 
   # フレームがストライク（1投目ストライク）の場合is_strike?はtrueになる
   def test_is_strike
     @frame.shots << Shot.new('X')
 
-    assert_equal @frame.is_strike?, true
+    assert_equal @frame.strike?, true
   end
 
   # フレームがストライクでない場合is_strike?はfalseを返す
   def test_is_strike_in_not_strike
-    shots = [
-      Shot.new(8),
-      Shot.new(1)
-    ]
-    shots.each {|s| @frame.shots << s}
+    shots = [Shot.new(8), Shot.new(1)]
+    shots.each { |shot| @frame.shots << shot }
 
-    assert_equal @frame.is_strike?, false
+    assert_equal @frame.strike?, false
   end
 
   # フレームがスペアの際is_spare?はtrueを返す
   def test_is_spare_in_spare
-    shots = [
-      Shot.new(7),
-      Shot.new(3)
-    ]
-    shots.each {|s| @frame.shots << s}
+    shots = [Shot.new(7), Shot.new(3)]
+    shots.each { |shot| @frame.shots << shot }
 
-    assert_equal @frame.is_spare?, true
+    assert_equal @frame.spare?, true
   end
 
   # フレームがスペアでない場合is_spare?はfalseになる
   def test_is_spare_in_normal
-    shots = [
-      Shot.new(6),
-      Shot.new(3)
-    ]
-    shots.each {|s| @frame.shots << s}
+    shots = [Shot.new(6), Shot.new(3)]
+    shots.each { |shot| @frame.shots << shot }
 
-    assert_equal @frame.is_spare?, false
+    assert_equal @frame.spare?, false
   end
 
   # フレームがストライクの場合is_spare?はfalseになる
   def test_is_spare_in_strike
     @frame.shots << Shot.new('X')
 
-    assert_equal @frame.is_spare?, false
+    assert_equal @frame.spare?, false
   end
 
   # scoreは倒したピンの合計を返す
   def test_score
-    shots = [
-      Shot.new(5),
-      Shot.new(3)
-    ]
-    shots.each {|s| @frame.shots << s}
+    shots = [Shot.new(5), Shot.new(3)]
+    shots.each { |shot| @frame.shots << shot }
 
     assert_equal @frame.score, 8
   end
@@ -145,22 +119,16 @@ class FrameTest < Minitest::Test
 
   # score_at_firstは一本目で倒したピンの数を返す
   def test_score_at_first
-    shots = [
-      Shot.new(7),
-      Shot.new(2)
-    ]
-    shots.each {|s| @frame.shots << s}
+    shots = [Shot.new(7), Shot.new(2)]
+    shots.each { |shot| @frame.shots << shot }
 
     assert_equal @frame.score_at_first, 7
   end
 
   # shot_by_secondは二本目までに倒したピンの合計を返す
   def test_shot_by_second
-    shots = [
-      Shot.new(7),
-      Shot.new(2)
-    ]
-    shots.each {|s| @frame.shots << s}
+    shots = [Shot.new(7), Shot.new(2)]
+    shots.each { |shot| @frame.shots << shot }
 
     assert_equal @frame.score_by_second, 9
   end
