@@ -2,7 +2,7 @@
 
 require 'minitest/autorun'
 require_relative '../lib/game'
-require_relative '../lib/frame'
+require_relative '../lib/last_frame'
 require_relative '../lib/shot'
 
 class TestGame < Game
@@ -66,77 +66,5 @@ class GameTest < Minitest::Test
     frames.each { |frame| @game.frames << frame }
 
     assert_equal @game.full?, false
-  end
-
-  # ゲームの全てのフレームでスペアが含まれない場合ゲームスコアを正しく計算できる
-  def test_total_score_in_normal
-    frames = create_frames(fill_pins(9))
-    frames << create_last_frames([3, 3])
-    frames.each { |frame| @game.frames << frame }
-
-    # 全て3本ずつ倒すケースを考える  3ピン x 2投 x 10フレーム = 60点
-    assert_equal @game.score, 60
-  end
-
-  # 最終フレームではないところでスペアが含まれる場合ゲームスコアを正しく計算できる
-  def test_total_score_in_spare
-    frames = create_frames([3, 7] + fill_pins(8))
-    frames << create_last_frames([3, 3])
-    frames.each { |frame| @game.frames << frame }
-
-    # 1フレームのみスペアが含まれるケースの計算
-    # 1投目のスコアが 3+7+3=13となるため 13+(3本x2投x9フレーム）= 67
-    assert_equal @game.score, 67
-  end
-
-  # 最終フレームではないところでストライクが含まれる場合ゲームスコアが正しく計算できる
-  def test_total_score_in_strike
-    frames = create_frames(['X'] + fill_pins(8))
-    frames << create_last_frames([3, 3])
-    frames.each { |frame| @game.frames << frame }
-
-    # 1フレームのみストライクが含まれるケースの計算
-    # 1投目のスコアが 10+3+3=16となるため 16+(3本x2投x9フレーム）= 70
-    assert_equal @game.score, 70
-  end
-
-  # 最終フレームがスペアの場合ゲームスコアが正しく計算できる
-  def test_score_in_spare_at_last
-    frames = create_frames(fill_pins(9))
-    frames << create_last_frames([4, 6, 5])
-    frames.each { |frame| @game.frames << frame }
-
-    # 3ピン x 2投 x 9フレーム + 4 + 6 + 5 = 69
-    assert_equal @game.score, 69
-  end
-
-  # 最終フレームがストライクの場合ゲームスコアが正しく計算できる
-  def test_score_in_strike_at_last
-    frames = create_frames(fill_pins(9))
-    frames << create_last_frames(%w[X X X])
-    frames.each { |frame| @game.frames << frame }
-
-    # 3ピン x 2投 x 9フレーム + 10 + 10 + 10 = 84
-    assert_equal @game.score, 84
-  end
-
-  # ストライクが2回連続した場合にゲームスコアが正しく計算できる
-  def test_score_in_continuous_strike
-    frames = create_frames(['X', 'X', 5, 3] + fill_pins(6))
-    frames << create_last_frames([3, 3])
-    frames.each { |frame| @game.frames << frame }
-
-    # フレーム1: 10+10+5=25 フレーム2: 10+5+3=18 フレーム3: 5+3=8 残り 3x2x7=42 合計93
-    assert_equal @game.score, 93
-  end
-
-  # 最終フレーム前にストライクが2回連続した場合にゲームスコアが正しく計算できる
-  def test_score_in_continuous_strike_before_last
-    frames = create_frames(fill_pins(8) + ['X'])
-    frames << create_last_frames(['X', 5, 5])
-    frames.each { |frame| @game.frames << frame }
-
-    # フレーム9: 10+10+5=25 フレーム10: 10+5+5=20 残り 3x2x8=48 合計93
-    assert_equal @game.score, 93
   end
 end

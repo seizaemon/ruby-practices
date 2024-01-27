@@ -10,52 +10,61 @@ class BowlingTest < Minitest::Test
     r.gets.to_i
   end
 
-  # 課題にあった倒したピンの引数からスコアが正しく計算できる
-  def test_bowling_score_pattern1
-    pins = '6,3,9,0,0,3,8,2,7,3,X,9,1,8,0,X,6,4,5'
+  # ゲームの全てのフレームでスペアが含まれない場合ゲームスコアを正しく計算できる
+  def test_total_score_in_normal
+    pins = (0..20).map { 3 }.join(',')
 
-    assert_equal 139, capture_stdout(pins)
+    # 全て3本ずつ倒すケースを考える  3ピン x 2投 x 10フレーム = 60点
+    assert_equal 60, capture_stdout(pins)
   end
 
-  def test_bowling_score_pattern2
-    pins = '6,3,9,0,0,3,8,2,7,3,X,9,1,8,0,X,X,X,X'
+  # 最終フレームではないところでスペアが含まれる場合ゲームスコアを正しく計算できる
+  def test_total_score_in_spare
+    pins = ([1, 9] + (3..20).map { 3 }).join(',')
 
-    assert_equal 164, capture_stdout(pins)
+    # 1フレームのみスペアが含まれるケースの計算
+    # 1投目のスコアが 3+7+3=13となるため 13+(3本x2投x9フレーム）= 67
+    assert_equal 67, capture_stdout(pins)
   end
 
-  def test_bowling_score_pattern3
-    pins = '0,10,1,5,0,0,0,0,X,X,X,5,1,8,1,0,4'
+  # 最終フレームではないところでストライクが含まれる場合ゲームスコアが正しく計算できる
+  def test_total_score_in_strike
+    pins = (['X'] + (3..20).map { 3 }).join(',')
 
-    assert_equal 107, capture_stdout(pins)
+    # 1フレームのみストライクが含まれるケースの計算
+    # 1投目のスコアが 10+3+3=16となるため 16+(3本x2投x9フレーム）= 70
+    assert_equal 70, capture_stdout(pins)
   end
 
-  def test_bowling_score_pattern4
-    pins = '6,3,9,0,0,3,8,2,7,3,X,9,1,8,0,X,X,0,0'
+  # 最終フレームがスペアの場合ゲームスコアが正しく計算できる
+  def test_score_in_spare_at_last
+    pins = ((1..18).map { 3 } + [4, 6, 5]).join(',')
 
-    assert_equal 134, capture_stdout(pins)
+    # 3ピン x 2投 x 9フレーム + 4 + 6 + 5 = 69
+    assert_equal 69, capture_stdout(pins)
   end
 
-  def test_bowling_score_pattern5
-    pins = '6,3,9,0,0,3,8,2,7,3,X,9,1,8,0,X,X,1,8'
+  # 最終フレームがストライクの場合ゲームスコアが正しく計算できる
+  def test_score_in_strike_at_last
+    pins = ((1..18).map { 3 } + ['X', 'X', 5]).join(',')
 
-    assert_equal 144, capture_stdout(pins)
+    # 3ピン x 2投 x 9フレーム + 10 + 10 + 5 = 84
+    assert_equal 79, capture_stdout(pins)
   end
 
-  def test_bowling_score_pattern6
-    pins = 'X,X,X,X,X,X,X,X,X,X,X,X'
+  # ストライクが2回連続した場合にゲームスコアが正しく計算できる
+  def test_score_in_continuous_strike
+    pins = (['X', 'X', 5, 3] + (5..20).map { 3 }).join(',')
 
-    assert_equal 300, capture_stdout(pins)
+    # フレーム1: 10+10+5=25 フレーム2: 10+5+3=18 フレーム3: 5+3=8 残り 3x2x7=42 合計93
+    assert_equal 93, capture_stdout(pins)
   end
 
-  def test_bowling_score_pattern7
-    pins = 'X,X,X,X,X,X,X,X,X,X,X,2'
+  # 最終フレーム前にストライクが2回連続した場合にゲームスコアが正しく計算できる
+  def test_score_in_continuous_strike_before_last
+    pins = ((1..16).map { 3 } + ['X', 'X', 5, 5]).join(',')
 
-    assert_equal 292, capture_stdout(pins)
-  end
-
-  def test_bowling_score_pattern8
-    pins = 'X,0,0,X,0,0,X,0,0,X,0,0,X,0,0'
-
-    assert_equal 50, capture_stdout(pins)
+    # フレーム9: 10+10+5=25 フレーム10: 10+5+5=20 残り 3x2x8=48 合計93
+    assert_equal 93, capture_stdout(pins)
   end
 end

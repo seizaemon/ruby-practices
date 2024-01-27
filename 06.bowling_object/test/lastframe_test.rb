@@ -2,7 +2,7 @@
 
 require 'minitest/autorun'
 require_relative '../lib/shot'
-require_relative '../lib/frame'
+require_relative '../lib/last_frame'
 
 class TestLastFrame < LastFrame
   attr_reader :shots

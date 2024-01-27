@@ -3,6 +3,7 @@
 
 require_relative 'lib/game'
 require_relative 'lib/frame'
+require_relative 'lib/last_frame'
 require_relative 'lib/shot'
 
 game = Game.new
