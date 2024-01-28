@@ -1,11 +1,10 @@
 # frozen_string_literal: true
 
 class Frame
-  MAX_SHOT = 2
+  SHOTS_MAX_LENGTH = 2
   SPARE_SCORE = 10
   def initialize
     @shots = []
-    @shots_max_length = MAX_SHOT
   end
 
   def strike?
@@ -13,7 +12,7 @@ class Frame
   end
 
   def full?
-    strike? ? true : @shots.length == @shots_max_length
+    strike? ? true : @shots.length == self.class::SHOTS_MAX_LENGTH
   end
 
   def spare?
@@ -25,7 +24,7 @@ class Frame
   end
 
   def score
-    sliced_total_score @shots_max_length
+    sliced_total_score self.class::SHOTS_MAX_LENGTH
   end
 
   def score_at_first

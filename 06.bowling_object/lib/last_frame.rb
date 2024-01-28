@@ -2,16 +2,11 @@
 
 require_relative 'frame'
 class LastFrame < Frame
-  MAX_SHOT = 3
-
-  def initialize
-    super
-    @shots_max_length = MAX_SHOT
-  end
+  SHOTS_MAX_LENGTH = 3
 
   def full?
-    return @shots.length == @shots_max_length if strike? || spare?
+    return @shots.length == self.class::SHOTS_MAX_LENGTH if strike? || spare?
 
-    @shots.length == @shots_max_length - 1
+    @shots.length == self.class::SHOTS_MAX_LENGTH - 1
   end
 end
