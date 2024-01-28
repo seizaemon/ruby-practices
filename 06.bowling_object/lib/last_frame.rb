@@ -2,11 +2,11 @@
 
 require_relative 'frame'
 class LastFrame < Frame
-  MAX = 3
+  MAX_SHOT = 3
 
   def initialize
     super
-    @shots_max_length = MAX
+    @shots_max_length = MAX_SHOT
   end
 
   def full?

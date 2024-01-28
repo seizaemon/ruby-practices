@@ -35,8 +35,8 @@ class Game
   end
 
   def score_in_strike(frame_index)
-    nil if frame_index == MAX_FRAME - 1
-    nil unless @frames[frame_index].strike?
+    return if frame_index == MAX_FRAME - 1
+    return unless @frames[frame_index].strike?
 
     if @frames[frame_index + 1].strike? && frame_index < 8
       [

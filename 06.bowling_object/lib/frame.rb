@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 class Frame
-  MAX = 2
+  MAX_SHOT = 2
   SPARE_SCORE = 10
   def initialize
     @shots = []
-    @shots_max_length = MAX
+    @shots_max_length = MAX_SHOT
   end
 
   def strike?
