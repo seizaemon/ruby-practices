@@ -4,14 +4,10 @@ require 'minitest/autorun'
 require 'pathname'
 require 'time'
 require_relative '../lib/file_entry'
+require_relative './work_dir'
 
 class FileEntryTest < Minitest::Test
-
-  def with_work_dir(&block)
-    Dir.mktmpdir('file_entry_test-') do |tmp_dir|
-      Dir.chdir(tmp_dir, &block)
-    end
-  end
+  include WorkDir
 
   # nameはファイル名を返す
   def test_name
