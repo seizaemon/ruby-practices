@@ -7,11 +7,11 @@ class FileEntry < File::Stat
 
   def initialize(file_path)
     super
-    @name = file_path
+    @name = File.basename(file_path)
   end
 
   def permission
-    mode_convert(mode.to_s(8).slice(3..7))
+    mode_to_s(mode.to_s(8).match(/.{4}$/)[0].chars)
   end
 
   def owner
@@ -23,7 +23,7 @@ class FileEntry < File::Stat
   end
 
   def update_time
-    Time.parse(atime.to_s)
+    Time.parse(atime.to_s).strftime('%-m %-d %H:%M')
   end
 
   def type
@@ -32,30 +32,29 @@ class FileEntry < File::Stat
 
   private
 
-  def mode_convert(mode_num)
+  def mode_to_s(mode_octet)
+    mode_special = mode_octet.shift
+    mode_main = mode_octet
+    mode_convert(mode_main, mode_special)
+  end
+
+  def mode_convert(mode_octet_arr, special_octet)
     mode_map = {
-      '0' => '---',
-      '1' => '--x',
-      '2' => '-w-',
-      '3' => '-wx',
-      '4' => 'r--',
-      '5' => 'r-x',
-      '6' => 'rw-',
-      '7' => 'rwx'
+      '0' => '---', '1' => '--x', '2' => '-w-',
+      '3' => '-wx', '4' => 'r--', '5' => 'r-x',
+      '6' => 'rw-', '7' => 'rwx'
     }
-    mode_num.split('').map { |s| mode_map[s] }.join('')
+    mode_arr = []
+    mode_arr << (special_octet == '4' ? mode_map[mode_octet_arr.shift].gsub(/x$/, 's').gsub(/-$/, 'S') : mode_map[mode_octet_arr.shift])
+    mode_arr << (special_octet == '2' ? mode_map[mode_octet_arr.shift].gsub(/x$/, 's').gsub(/-$/, 'S') : mode_map[mode_octet_arr.shift])
+    mode_arr << (special_octet == '1' ? mode_map[mode_octet_arr.shift].gsub(/x$/, 't').gsub(/-$/, 'T') : mode_map[mode_octet_arr.shift])
+    mode_arr.join('')
   end
 
   def type_convert(type_str)
-    type_map = {
-      'fifo' => 'p', # FIFO
-      'characterSpecial' => 'c', # Character Special
-      'directory' => 'd', # Directory
-      'blockSpecial' => 'b', # Block Special
-      'file' => '-', # Regular file
-      'link' => 'l', # Symbolic link
-      'socket' => 's' # Socket
-    }
-    type_map[type_str]
+    return 'l' if FileTest.symlink?(@name)
+    return '-' if type_str == 'file'
+
+    type_str[0].downcase
   end
 end

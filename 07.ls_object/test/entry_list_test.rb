@@ -58,13 +58,13 @@ class EntryListTest < Minitest::Test
       system 'mkdir .entry_b .entry_d'
       system 'mkfifo .entry_a .entry_f'
       entry_list = EntryList.new(hidden: true)
-      %w[. .. .entry_a .entry_b .entry_c .entry_d .entry_e .entry_f].each_with_index do |entry, i |
+      %w[. .. .entry_a .entry_b .entry_c .entry_d .entry_e .entry_f].each_with_index do |entry, i|
         assert_equal FileEntry.new(entry), entry_list.entries[i]
       end
     end
   end
 
-  # reverse_entriesはファイル名が辞書と逆順の配列を返す
+  # reverseフラグ付きの場合はファイル名が辞書と逆順の配列を返す
   def test_reverse
     with_work_dir do
       system "touch #{@test_files.join(' ')}"
@@ -75,8 +75,103 @@ class EntryListTest < Minitest::Test
     end
   end
 
-  # reverse_entriesは隠しエントリを優先してそれぞれ名前が辞書と逆順となった配列を返す
+  # hidden, reverseフラグ付きの場合名前が辞書と逆順となった配列を返す
   def test_reverse_with_hidden_entries
+    with_work_dir do
+      system "touch #{@test_files.join(' ')} #{@hidden_files.join(' ')}"
+      entry_list = EntryList.new(hidden: true, reverse: true)
+      ['.', '..', @test_files, @hidden_files].flatten.sort.reverse.each_with_index do |entry, i|
+        assert_equal FileEntry.new(entry), entry_list.entries[i]
+      end
+    end
+  end
 
+  # ディレクトリを指定した場合指定したディレクトリ配下のファイルを検索した配列を返す
+  def test_with_directory_parameter
+    with_work_dir do
+      files = @test_files.map { |file| "test_dir/#{file}" }
+      system "mkdir test_dir; touch #{files.join(' ')}"
+      entry_list = EntryList.new('test_dir')
+      @test_files.sort.each_with_index do |entry, i|
+        assert_equal FileEntry.new("test_dir/#{entry}"), entry_list.entries[i]
+      end
+    end
+  end
+end
+
+class EntryListMaxCharTest < Minitest::Test
+  include WorkDir
+
+  # link_max_charはファイルのlink数の桁数を返す
+  def test_nlink_max_char
+    with_work_dir do
+      system 'touch test_file1'
+      20.times { |n| system "ln test_file1 test_link#{n}" }
+      entry_list = EntryList.new
+      assert_equal 2, entry_list.nlink_max_char
+    end
+  end
+
+  # owner_max_charはファイルownerの文字数を返す
+  def test_owner_max_char
+    with_work_dir do
+      system 'touch test_file1'
+      r, w = IO.pipe
+      system 'id -un', out: w
+      w.close
+      entry_list = EntryList.new
+      assert_equal r.gets.chomp.length, entry_list.owner_max_char
+    end
+  end
+
+  # group_max_charはファイルownerの文字数を返す
+  def test_group_max_char
+    with_work_dir do
+      system 'touch test_file1'
+      r, w = IO.pipe
+      system 'id -gn', out: w
+      w.close
+      entry_list = EntryList.new
+      assert_equal r.gets.chomp.length, entry_list.group_max_char
+    end
+  end
+
+  def test_size_max_char
+    with_work_dir do
+      system 'touch test_file1 test_file2'
+      system 'dd if=/dev/zero of=test_file1 bs=128 count=1'
+      system 'dd if=/dev/zero of=test_file2 bs=50 count=1'
+      entry_list = EntryList.new
+      assert_equal 3, entry_list.size_max_char
+    end
+  end
+
+  # update_time_max_charはファイル更新時間の文字列の最大文字列を返す
+  def test_update_time_max_char
+    with_work_dir do
+      system 'touch test_file1'
+      now = Time.now.strftime('%-m %-d %H:%M')
+      entry_list = EntryList.new
+      assert_equal now.length, entry_list.update_time_max_char
+    end
+  end
+
+  def test_filename_max_char
+    with_work_dir do
+      system 'touch test_file1 test_long_file1'
+      entry_list = EntryList.new
+      assert_equal 'test_long_file1'.length, entry_list.filename_max_char
+    end
+  end
+
+  # オブジェクト作成時にファイルが存在しない場合、メッセージと共にエラーとなる
+  # TODO: エラーの文言を出す責任は誰が追うべきなのか
+  def test_no_exist_file
+    r, w = IO.pipe
+    w.puts EntryList.new('no_file')
+    w.close
+
+    error_msg = 'no_file: No such file or directory'
+    assert_equal error_msg, r.gets
   end
 end
