@@ -9,7 +9,7 @@ class Screen
   end
 
   def out
-    return '' if @entry_list.entries.empty?
+    return '' if @entry_list.empty?
 
     screen_row = calc_row_num(@console_width)
     longest_name = @entry_list.filename_max_char

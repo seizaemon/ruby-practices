@@ -93,5 +93,37 @@ class LsTest < Minitest::Test
     end
   end
 
-  # TODO: 存在しないファイルを指定した場合
+  # 複数の引数を指定した場合は通常ファイルを優先して出力する
+  def test_ls_with_file_and_directory
+    with_test_env do
+      r, w = IO.pipe
+      system "ruby #{__dir__}/../ls.rb test_dir test_file1", out: w
+      w.close
+
+      expected = <<~TEXT
+        test_file1
+
+        test_dir:
+        test_file3 test_file4
+      TEXT
+      assert_equal expected, r.gets(nil)
+    end
+  end
+
+  # 存在しないファイルを指定した場合
+  def test_nonexistent_file
+    with_test_env do
+      r, w = IO.pipe
+      system "ruby #{__dir__}/../ls.rb test_dir non_existent2 non_existent1 2>&1", out: w
+      w.close
+
+      expected = <<~TEXT
+        ls: non_existent1: No such file or directory
+        ls: non_existent2: No such file or directory
+        test_dir:
+        test_file3 test_file4
+      TEXT
+      assert_equal expected.chomp, r.gets(nil)
+    end
+  end
 end

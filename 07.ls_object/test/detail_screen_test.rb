@@ -31,15 +31,11 @@ class DetailScreenTest < Minitest::Test
       system 'touch test_file1 ; chmod 754 test_file1; dd if=/dev/zero of=test_file1 bs=100 count=1'
       system 'touch test_file2 ; chmod 421 test_file2'
       system 'touch test_long_file1 ; chmod 777 test_long_file1'
-      screen = DetailScreen.new(EntryList.new)
+      screen = DetailScreen.new(EntryList.new(%w[test_file2 test_file1 test_long_file1]))
       r, w = IO.pipe
       w.puts screen.out
       w.close
       assert_equal expected, r.gets('')
     end
   end
-
-  # reverseオプションを付けた場合逆順に表示される
-  # hiddenオプションを付けた場合隠しファイルも表示される
-  # 複数のディレクトリを引数に指定した場合、ディレクトリを先頭ラベルにそれぞれ内容が表示される（改行が区切り）
 end

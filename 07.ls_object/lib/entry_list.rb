@@ -7,9 +7,13 @@ class EntryList
   include File::Constants
   attr_reader :entries
 
-  def initialize(path = '.', hidden: false, reverse: false)
+  def initialize(file_names, base: '', reverse: false)
     @entries = []
-    get_entry_list(path, hidden:, reverse:)
+    create_entries(file_names, base:, reverse:)
+  end
+
+  def empty?
+    @entries.empty?
   end
 
   def length
@@ -42,21 +46,11 @@ class EntryList
 
   private
 
-  def get_entry_list(path, hidden: false, reverse: false)
-    hidden_flag = hidden ? File::FNM_DOTMATCH : 0
-    first_entry = FileEntry.new(path)
-
-    if first_entry.type == 'd'
-      entries = Pathname.glob('**', hidden_flag, base: path)
-      entries.map! { |entry| (Pathname.new(path) + entry).to_s }
-    else
-      entries = Dir.glob(path, hidden_flag)
-    end
-    entries << '..' if hidden
-    @entries = reverse ? bulk_create_entry(entries.sort.reverse) : bulk_create_entry(entries.sort)
+  def create_entries(file_names, base:, reverse:)
+    @entries = reverse ? bulk_create_entry(file_names.sort.reverse, base) : bulk_create_entry(file_names.sort, base)
   end
 
-  def bulk_create_entry(entries)
-    entries.map { |entry| FileEntry.new(entry) }
+  def bulk_create_entry(entries, base)
+    entries.map { |entry| FileEntry.new((Pathname(base) + entry).to_s) }
   end
 end

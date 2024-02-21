@@ -23,7 +23,7 @@ class FileEntry < File::Stat
   end
 
   def update_time
-    Time.parse(atime.to_s).strftime('%-m %-d %H:%M')
+    Time.parse(atime.to_s).strftime('%_m %_d %H:%M')
   end
 
   def type

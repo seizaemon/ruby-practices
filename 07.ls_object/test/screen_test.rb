@@ -15,9 +15,10 @@ class ScreenTest < Minitest::Test
   end
 
   def create_test_files(max_file_num)
-    max_file_num.times do |n|
+    (0..max_file_num - 1).map do |n|
       suffix = format('%02d', n)
       File.open("test_file#{suffix}", 'w', 0o755) {}
+      "test_file#{suffix}"
     end
   end
 
@@ -28,11 +29,11 @@ class ScreenTest < Minitest::Test
     TEXT
     with_work_dir do
       r, w = IO.pipe
-      create_test_files(3)
-      screen = Screen.new(EntryList.new)
+      screen = Screen.new(EntryList.new(create_test_files(3)))
       w.puts screen.out
       w.close
-      assert_equal expected, r.gets.to_s
+
+      assert_equal expected, r.gets('')
     end
   end
 
@@ -41,9 +42,8 @@ class ScreenTest < Minitest::Test
     file_num = 13
 
     with_work_dir do
-      create_test_files(file_num)
       r, w = IO.pipe
-      screen = Screen.new(EntryList.new)
+      screen = Screen.new(EntryList.new(create_test_files(file_num)))
       w.puts screen.out
       w.close
 
@@ -60,20 +60,10 @@ class ScreenTest < Minitest::Test
   def test_with_empty
     with_work_dir do
       r, w = IO.pipe
-      screen = Screen.new(EntryList.new)
+      screen = Screen.new(EntryList.new([]))
       w.puts screen.out
       w.close
       assert_nil r.gets('')
-    end
-  end
-
-  # 複数のディレクトリが指定された場合、ディレクトリを先頭ラベルに内容を表示する
-  def test_multiple_directory
-    with_work_dir do
-      system 'mkdir test_dir1; touch test_dir1/test_file1 test_dir1/test_file2'
-      system 'mkdir test_dir2; touch test_dir2/test_file3 test_dir2/test_file4'
-
-
     end
   end
 end

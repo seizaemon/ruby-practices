@@ -4,34 +4,18 @@ require 'minitest/autorun'
 require 'pathname'
 require 'time'
 require_relative '../lib/file_entry'
-require_relative './work_dir'
+require_relative 'work_dir'
+require_relative 'create_test_file'
 
 class FileEntryTest < Minitest::Test
   include WorkDir
-
-  def filename_owner_and_group
-    system 'touch test_file'
-    ['id -un', 'id -gn'].map do |cmd|
-      element = ''
-      IO.pipe do |r, w|
-        system cmd, out: w
-        element = r.gets.chomp
-      end
-      element
-    end.push('test_file')
-  end
-
-  def create_various_type_of_file
-    system 'touch test_file ; chmod 765 test_file ; touch test_file2 ; chmod 421 test_file2 ; touch test_file3 ; chmod 000 test_file3'
-    system 'touch test_file4 ; chmod 4777 test_file4 ; touch test_file5 ; chmod 4666 test_file5'
-    system 'touch test_file6 ; chmod 2777 test_file6 ; touch test_file7 ; chmod 2666 test_file7'
-  end
+  include CreateTestFile
 
   # nameはファイル名を返す
   def test_name
     with_work_dir do
-      test_file_name, = filename_owner_and_group
-      file_entry = FileEntry.new(test_file_name)
+      system 'touch test_file'
+      file_entry = FileEntry.new('test_file')
       assert_equal 'test_file', file_entry.name
     end
   end
@@ -39,12 +23,74 @@ class FileEntryTest < Minitest::Test
   # sizeはファイルサイズを返す
   def test_size
     with_work_dir do |work_dir|
-      # 1MBのファイルを作成
-      system "dd if=/dev/zero of=#{work_dir}/test_file bs=1024 count=10"
+      block_size = 1024
+      count = 10
+      system "dd if=/dev/zero of=#{work_dir}/test_file bs=#{block_size} count=#{count}"
       file_entry = FileEntry.new('test_file')
       assert_equal block_size * count, file_entry.size
     end
   end
+
+  # update_dateはlsのフォーマットに従ってファイル最新更新日を返す
+  def test_update_time
+    with_work_dir do
+      file_name, = filename_with_owner_and_group
+      updated = Time.now.strftime('%_m %_d %H:%M')
+      file_entry = FileEntry.new(file_name)
+      assert_equal updated, file_entry.update_time
+    end
+  end
+
+  # ownerはファイルの所属オーナーを帰す
+  def test_owner
+    with_work_dir do
+      test_file_name, user, = filename_with_owner_and_group
+      file_entry = FileEntry.new(test_file_name)
+      assert_equal user, file_entry.owner
+    end
+  end
+
+  # groupはファイルの所属グループを帰す
+  def test_group
+    with_work_dir do
+      test_file_name, _, group = filename_with_owner_and_group
+      file_entry = FileEntry.new(test_file_name)
+      assert_equal group, file_entry.group
+    end
+  end
+
+  # typeはファイルが通常の場合 - を返す
+  def test_type_with_normal_file
+    with_work_dir do
+      test_file_name, = filename_with_owner_and_group
+      file_entry = FileEntry.new(test_file_name)
+      assert_equal '-', file_entry.type
+    end
+  end
+
+  # typeはファイルがsymlinkの場合 l を返す
+  def test_type_with_link
+    with_work_dir do
+      system 'touch test_file ; ln -s test_file test_link'
+      file_entry = FileEntry.new('test_link')
+      assert_equal 'l', file_entry.type
+    end
+  end
+
+  # nlinkはファイルリンク数を返す
+  def test_nlink
+    with_work_dir do
+      system 'mkdir test; touch test/test_file1'
+      file_entry = FileEntry.new('test')
+      # ディレクトリ内のハードリンクの数は .と..とtest_file1で3つ
+      assert_equal 3, file_entry.nlink
+    end
+  end
+end
+
+class FileEntryPermissionTest < Minitest::Test
+  include WorkDir
+  include CreateTestFile
 
   # permissionはファイルパーミッションを文字列表現で返す
   def test_permission
@@ -93,63 +139,6 @@ class FileEntryTest < Minitest::Test
 
       assert_equal 'rwxrwxrwt', file_entry1.permission
       assert_equal 'rw-rw-rwT', file_entry2.permission
-    end
-  end
-
-  # update_dateはlsのフォーマットに従ってファイル最新更新日を返す
-  # メソッド名もう少し考える
-  def test_update_time
-    with_work_dir do
-      file_name, = filename_owner_and_group
-      updated = Time.now.strftime('%-m %-d %H:%M')
-      file_entry = FileEntry.new(file_name)
-      assert_equal updated, file_entry.update_time
-    end
-  end
-
-  # ownerはファイルの所属オーナーを帰す
-  def test_owner
-    with_work_dir do
-      test_file_name, user, = filename_owner_and_group
-      file_entry = FileEntry.new(test_file_name)
-      assert_equal user, file_entry.owner
-    end
-  end
-
-  # groupはファイルの所属グループを帰す
-  def test_group
-    with_work_dir do
-      test_file_name, _, group = filename_owner_and_group
-      file_entry = FileEntry.new(test_file_name)
-      assert_equal group, file_entry.group
-    end
-  end
-
-  # typeはファイルが通常の場合 - を返す
-  def test_type_with_normal_file
-    with_work_dir do
-      test_file_name, = filename_owner_and_group
-      file_entry = FileEntry.new(test_file_name)
-      assert_equal '-', file_entry.type
-    end
-  end
-
-  # typeはファイルがsymlinkの場合 l を返す
-  def test_type_with_link
-    with_work_dir do
-      system 'touch test_file ; ln -s test_file test_link'
-      file_entry = FileEntry.new('test_link')
-      assert_equal 'l', file_entry.type
-    end
-  end
-
-  # nlinkはファイルリンク数を返す
-  def test_nlink
-    with_work_dir do
-      system 'mkdir test; touch test/test_file1'
-      file_entry = FileEntry.new('test')
-      # ディレクトリ内のハードリンクの数は .と..とtest_file1で3つ
-      assert_equal 3, file_entry.nlink
     end
   end
 end
