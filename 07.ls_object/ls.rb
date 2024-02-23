@@ -16,35 +16,32 @@ opt.on('-r') { reverse = true }
 opt.on('-l') { long_format = true }
 
 argv = opt.parse(ARGV)
-argv = ['.'] if argv.count.zero?
+argv = ['.'] if argv.empty?
 
-out = []
-error = []
+file_out = []
+dir_out = []
+error_out = []
 
-# 存在しないエントリはここで除去
-argv.select! do |arg|
+existed = argv.select do |arg|
   File.lstat(arg)
   true
 rescue Errno::ENOENT
-  error << "ls: #{arg}: No such file or directory"
+  error_out << "ls: #{arg}: No such file or directory"
   false
 end
 
-# ディレクトリを指定した場合は中身を展開してEntryListを作成する
-dir_entries = argv.select { |arg| File.lstat(arg).ftype == 'directory' }
+dir_entries = existed.select { |arg| File.lstat(arg).ftype == 'directory' }
 
-# 引数がファイルの場合
-entry_list = EntryList.new(
-  argv.reject { |arg| File.lstat(arg).ftype == 'directory' },
+file_entries = EntryList.new(
+  existed.reject { |arg| File.lstat(arg).ftype == 'directory' },
   reverse:
 )
-screen = long_format ? DetailScreen.new(entry_list) : Screen.new(entry_list)
-out << screen.out.to_s
+unless file_entries.empty?
+  screen = long_format ? DetailScreen.new(file_entries) : Screen.new(file_entries)
+  file_out << screen.out
+end
 
-# 引数がディレクトリの場合
-# TODO: もっとシンプルに
-## dir_entries内のentryは一つ一つ中身を展開して渡す
-unless dir_entries.nil? || dir_entries.empty?
+unless dir_entries.empty?
   reverse ? dir_entries.sort.reverse! : dir_entries.sort!
 
   dir_entries.each do |entry|
@@ -54,9 +51,13 @@ unless dir_entries.nil? || dir_entries.empty?
     entry_list = EntryList.new(entries, base: entry, reverse:)
     dir_screen = long_format ? DetailScreen.new(entry_list) : Screen.new(entry_list)
 
-    out << (argv.length == 1 && error.empty? ? "#{dir_screen.out}\n" : "\n#{entry}:\n#{dir_screen.out}\n")
+    dir_out << (argv.length == 1 ? dir_screen.out : "#{entry}:\n#{dir_screen.out}")
   end
 end
 
-$stderr.print error.sort.join("\n") unless error.empty?
-print out.join("\n")
+warn error_out.sort.join("\n") unless error_out.empty?
+unless file_out.empty?
+  puts file_out.join("\n")
+  puts unless dir_out.empty?
+end
+puts dir_out.join("\n\n") unless dir_out.empty?

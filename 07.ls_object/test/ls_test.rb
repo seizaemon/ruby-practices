@@ -123,7 +123,7 @@ class LsTest < Minitest::Test
         test_dir:
         test_file3 test_file4
       TEXT
-      assert_equal expected.chomp, r.gets(nil)
+      assert_equal expected, r.gets('')
     end
   end
 end
