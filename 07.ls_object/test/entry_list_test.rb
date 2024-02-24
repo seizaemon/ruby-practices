@@ -11,9 +11,7 @@ class EntryListTest < Minitest::Test
 
   def setup
     @test_files = %w[file2 file1 file3]
-    @hidden_files = %w[.file1 .file2]
     @test_dirs = %w[dir2 dir1]
-    @hidden_dirs = %w[.dir1 .dir2]
   end
 
   # entriesはファイルの名前の辞書順にFileEntryオブジェクトの配列が返る
@@ -33,7 +31,7 @@ class EntryListTest < Minitest::Test
       system "touch #{@test_files.join(' ')}"
       entry_list = EntryList.new(@test_files, reverse: true)
       @test_files.sort.reverse.each_with_index do |entry, i|
-        assert_equal FileEntry.new(entry), entry_list.files[i]
+        assert_equal FileEntry.new(entry), entry_list.entries[i]
       end
     end
   end
