@@ -12,12 +12,12 @@ class EntryListTest < Minitest::Test
   def setup
     @test_files = %w[file2 file1 file3]
     @hidden_files = %w[.file1 .file2]
-    @test_dirs = %w[dir1 dir2]
+    @test_dirs = %w[dir2 dir1]
     @hidden_dirs = %w[.dir1 .dir2]
   end
 
   # entriesはファイルの名前の辞書順にFileEntryオブジェクトの配列が返る
-  def test_create
+  def test_entries
     with_work_dir do
       system "touch #{@test_files.join(' ')}"
       entry_list = EntryList.new(@test_files)
@@ -27,76 +27,60 @@ class EntryListTest < Minitest::Test
     end
   end
 
-  # entriesはファイルの種別関係なく名前が辞書順の配列を返す
-  def test_create_with_variable_entries
-    with_work_dir do
-      system 'touch entry_c entry_e'
-      system 'mkdir entry_b entry_d'
-      system 'mkfifo entry_a entry_f'
-      entry_list = EntryList.new(%w[entry_a entry_b entry_c entry_d entry_e entry_f].shuffle)
-      %w[entry_a entry_b entry_c entry_d entry_e entry_f].each_with_index do |entry, i|
-        assert_equal FileEntry.new(entry), entry_list.entries[i]
-      end
-    end
-  end
-
-  # hiddenフラグをonにした場合entriesは隠しエントリの名前が辞書順の配列を返す
-  # def test_create_with_hidden_entries
-  #   with_work_dir do
-  #     system "touch #{@hidden_files.join(' ')}"
-  #     entry_list = EntryList.new(hidden: true)
-  #     ['.', '..', @hidden_files].flatten.sort.each_with_index do |entry, i|
-  #       assert_equal FileEntry.new(entry), entry_list.entries[i]
-  #     end
-  #   end
-  # end
-
-  # entriesは隠しエントリも種別関係なく名前が辞書順の配列を返す
-  # def test_create_with_variable_hidden_entries
-  #   with_work_dir do
-  #     system 'touch .entry_c .entry_e'
-  #     system 'mkdir .entry_b .entry_d'
-  #     system 'mkfifo .entry_a .entry_f'
-  #     entry_list = EntryList.new(hidden: true)
-  #     %w[. .. .entry_a .entry_b .entry_c .entry_d .entry_e .entry_f].each_with_index do |entry, i|
-  #       assert_equal FileEntry.new(entry), entry_list.entries[i]
-  #     end
-  #   end
-  # end
-
   # reverseフラグ付きの場合はファイル名が辞書と逆順の配列を返す
   def test_reverse
     with_work_dir do
       system "touch #{@test_files.join(' ')}"
       entry_list = EntryList.new(@test_files, reverse: true)
       @test_files.sort.reverse.each_with_index do |entry, i|
-        assert_equal FileEntry.new(entry), entry_list.entries[i]
+        assert_equal FileEntry.new(entry), entry_list.files[i]
       end
     end
   end
 
-  # hidden, reverseフラグ付きの場合名前が辞書と逆順となった配列を返す
-  # def test_reverse_with_hidden_entries
-  #   with_work_dir do
-  #     system "touch #{@test_files.join(' ')} #{@hidden_files.join(' ')}"
-  #     entry_list = EntryList.new(hidden: true, reverse: true)
-  #     ['.', '..', @test_files, @hidden_files].flatten.sort.reverse.each_with_index do |entry, i|
-  #       assert_equal FileEntry.new(entry), entry_list.entries[i]
-  #     end
-  #   end
-  # end
+  # filesはファイルの名前の配列が辞書順に返る
+  def test_files
+    with_work_dir do
+      system "touch #{@test_files.join(' ')}"
+      entry_list = EntryList.new(@test_files)
+      assert_equal @test_files.sort, entry_list.files
+    end
+  end
 
-  # ディレクトリを指定した場合指定したディレクトリ配下のファイルを検索した配列を返す
-  # def test_with_directory_parameter
-  #   with_work_dir do
-  #     files = @test_files.map { |file| "test_dir/#{file}" }
-  #     system "mkdir test_dir; touch #{files.join(' ')}"
-  #     entry_list = EntryList.new('test_dir')
-  #     @test_files.sort.each_with_index do |entry, i|
-  #       assert_equal FileEntry.new("test_dir/#{entry}"), entry_list.entries[i]
-  #     end
-  #   end
-  # end
+  # reverseフラグがついた場合filesはファイルの名前の配列が辞書の逆順の配列が返る
+  def test_files_with_reverse
+    with_work_dir do
+      system "touch #{@test_files.join(' ')}"
+      entry_list = EntryList.new(@test_files, reverse: true)
+      assert_equal @test_files.sort.reverse, entry_list.files
+    end
+  end
+
+  # 存在しないファイルを指定した場合はnot_founds辞書順でファイル名が入る
+  def test_not_founds
+    with_work_dir do
+      entry_list = EntryList.new(%w[no_file2 no_file1])
+      assert_equal %w[no_file1 no_file2], entry_list.not_founds
+    end
+  end
+
+  # dirsはディレクトリの名前が辞書順の配列が返る
+  def test_dirs
+    with_work_dir do
+      system "mkdir #{@test_dirs.join(' ')}"
+      entry_list = EntryList.new(@test_dirs)
+      assert_equal @test_dirs.sort, entry_list.dirs
+    end
+  end
+
+  # reverseつきのdirsはディレクトリの名前が辞書の逆順の配列が返る
+  def test_dirs_with_reverse
+    with_work_dir do
+      system "mkdir #{@test_dirs.join(' ')}"
+      entry_list = EntryList.new(@test_dirs, reverse: true)
+      assert_equal @test_dirs.sort.reverse, entry_list.dirs
+    end
+  end
 
   # entriesが空の場合empty?はtrueを返す
   def test_empty
@@ -106,6 +90,15 @@ class EntryListTest < Minitest::Test
 
     assert entry_list_empty.empty?
     assert_equal false, entry_list_not_empty.empty?
+  end
+
+  # baseオプションはbaseで指定したディレクトリ内のentryを返す
+  def test_base
+    with_work_dir do
+      system 'mkdir test_dir; touch test_dir/test_file2 test_dir/test_file1'
+      entry_list = EntryList.new(%w[test_file2 test_file1], base: 'test_dir')
+      assert_equal [FileEntry.new('test_dir/test_file1'), FileEntry.new('test_dir/test_file2')], entry_list.entries
+    end
   end
 end
 
@@ -173,7 +166,4 @@ class EntryListMaxCharTest < Minitest::Test
       assert_equal 'test_long_file1'.length, entry_list.filename_max_char
     end
   end
-
-  # TODO: baseを指定した場合
-
 end

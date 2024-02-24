@@ -86,6 +86,15 @@ class FileEntryTest < Minitest::Test
       assert_equal 3, file_entry.nlink
     end
   end
+
+  # baseを指定した場合nameはファイル名のみが入る
+  def test_base_dir
+    with_work_dir do
+      system 'mkdir test_dir; touch test_dir/test_file'
+      file_entry = FileEntry.new('test_dir/test_file')
+      assert_equal 'test_dir/test_file', file_entry.name
+    end
+  end
 end
 
 class FileEntryPermissionTest < Minitest::Test

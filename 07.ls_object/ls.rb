@@ -18,46 +18,33 @@ opt.on('-l') { long_format = true }
 argv = opt.parse(ARGV)
 argv = ['.'] if argv.empty?
 
-file_out = []
-dir_out = []
-error_out = []
+entry_list = EntryList.new(argv, reverse:)
 
-existed = argv.select do |arg|
-  File.lstat(arg)
-  true
-rescue Errno::ENOENT
-  error_out << "ls: #{arg}: No such file or directory"
-  false
+# エラー表示だけはreverseフラグにかかわらず辞書順
+entry_list.not_founds.sort.each do |not_found|
+  warn "ls: #{not_found}: No such file or directory"
 end
 
-dir_entries = existed.select { |arg| File.lstat(arg).ftype == 'directory' }
-
-file_entries = EntryList.new(
-  existed.reject { |arg| File.lstat(arg).ftype == 'directory' },
-  reverse:
-)
-unless file_entries.empty?
-  screen = long_format ? DetailScreen.new(file_entries) : Screen.new(file_entries)
-  file_out << screen.out
+unless entry_list.files.empty?
+  screen = if long_format
+             DetailScreen.new(EntryList.new(entry_list.files, reverse:))
+           else
+             Screen.new(EntryList.new(entry_list.files, reverse:))
+           end
+  puts screen.out
+  puts unless entry_list.dirs.empty?
 end
 
-unless dir_entries.empty?
-  reverse ? dir_entries.sort.reverse! : dir_entries.sort!
+unless entry_list.dirs.empty?
+  entry_list.dirs.each do |base|
+    entry_names = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base:)
+    entry_names << '..' if hidden
 
-  dir_entries.each do |entry|
-    entries = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base: entry)
-    entries << '..' if hidden
-
-    entry_list = EntryList.new(entries, base: entry, reverse:)
-    dir_screen = long_format ? DetailScreen.new(entry_list) : Screen.new(entry_list)
-
-    dir_out << (argv.length == 1 ? dir_screen.out : "#{entry}:\n#{dir_screen.out}")
+    dir_screen = if long_format
+                   DetailScreen.new(EntryList.new(entry_names, base:, reverse:))
+                 else
+                   Screen.new(EntryList.new(entry_names, base:, reverse:))
+                 end
+    puts(argv.length == 1 ? dir_screen.out : "#{base}:\n#{dir_screen.out}")
   end
 end
-
-warn error_out.sort.join("\n") unless error_out.empty?
-unless file_out.empty?
-  puts file_out.join("\n")
-  puts unless dir_out.empty?
-end
-puts dir_out.join("\n\n") unless dir_out.empty?

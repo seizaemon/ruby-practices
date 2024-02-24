@@ -7,7 +7,7 @@ class FileEntry < File::Stat
 
   def initialize(file_path)
     super
-    @name = File.basename(file_path)
+    @name = File.basename file_path
   end
 
   def permission

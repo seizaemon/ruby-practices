@@ -5,10 +5,13 @@ require_relative 'file_entry'
 
 class EntryList
   include File::Constants
-  attr_reader :entries
+  attr_reader :entries, :files, :dirs, :not_founds
 
   def initialize(file_names, base: '', reverse: false)
     @entries = []
+    @not_founds = []
+    @files = []
+    @dirs = []
     create_entries(file_names, base:, reverse:)
   end
 
@@ -51,6 +54,12 @@ class EntryList
   end
 
   def bulk_create_entry(entries, base)
-    entries.map { |entry| FileEntry.new((Pathname(base) + entry).to_s) }
+    entries.map do |entry|
+      f = FileEntry.new((Pathname(base) + entry).to_s)
+      f.type == 'd' ? @dirs << entry : @files << entry
+      f
+    rescue Errno::ENOENT
+      @not_founds << entry
+    end
   end
 end
