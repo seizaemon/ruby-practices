@@ -7,17 +7,19 @@ require_relative './work_dir'
 
 class EntryListTest < Minitest::Test
   include WorkDir
-  # 指定したディレクトリのファイル一覧とFileEntryオブジェクトを作成し辞書順に収める
 
-  def setup
-    @test_files = %w[file2 file1 file3]
-    @test_dirs = %w[dir2 dir1]
+  def ready_test_env(&block)
+    with_work_dir do
+      @test_files = %w[file2 file1 file3]
+      @test_dirs = %w[dir2 dir1]
+      system "touch #{@test_files.join(' ')} ; mkdir #{@test_dirs.join(' ')}"
+      block.call
+    end
   end
 
   # entriesはファイルの名前の辞書順にFileEntryオブジェクトの配列が返る
   def test_entries
-    with_work_dir do
-      system "touch #{@test_files.join(' ')}"
+    ready_test_env do
       entry_list = EntryList.new(@test_files)
       @test_files.sort.each_with_index do |file, i|
         assert_equal FileEntry.new(file), entry_list.entries[i]
@@ -27,8 +29,7 @@ class EntryListTest < Minitest::Test
 
   # reverseフラグ付きの場合はファイル名が辞書と逆順の配列を返す
   def test_reverse
-    with_work_dir do
-      system "touch #{@test_files.join(' ')}"
+    ready_test_env do
       entry_list = EntryList.new(@test_files, reverse: true)
       @test_files.sort.reverse.each_with_index do |entry, i|
         assert_equal FileEntry.new(entry), entry_list.entries[i]
@@ -38,8 +39,7 @@ class EntryListTest < Minitest::Test
 
   # filesはファイルの名前の配列が辞書順に返る
   def test_files
-    with_work_dir do
-      system "touch #{@test_files.join(' ')}"
+    ready_test_env do
       entry_list = EntryList.new(@test_files)
       assert_equal @test_files.sort, entry_list.files
     end
@@ -47,8 +47,7 @@ class EntryListTest < Minitest::Test
 
   # reverseフラグがついた場合filesはファイルの名前の配列が辞書の逆順の配列が返る
   def test_files_with_reverse
-    with_work_dir do
-      system "touch #{@test_files.join(' ')}"
+    ready_test_env do
       entry_list = EntryList.new(@test_files, reverse: true)
       assert_equal @test_files.sort.reverse, entry_list.files
     end
@@ -56,16 +55,13 @@ class EntryListTest < Minitest::Test
 
   # 存在しないファイルを指定した場合はnot_founds辞書順でファイル名が入る
   def test_not_founds
-    with_work_dir do
-      entry_list = EntryList.new(%w[no_file2 no_file1])
-      assert_equal %w[no_file1 no_file2], entry_list.not_founds
-    end
+    entry_list = EntryList.new(%w[no_file2 no_file1])
+    assert_equal %w[no_file1 no_file2], entry_list.not_founds
   end
 
   # dirsはディレクトリの名前が辞書順の配列が返る
   def test_dirs
-    with_work_dir do
-      system "mkdir #{@test_dirs.join(' ')}"
+    ready_test_env do
       entry_list = EntryList.new(@test_dirs)
       assert_equal @test_dirs.sort, entry_list.dirs
     end
@@ -73,8 +69,7 @@ class EntryListTest < Minitest::Test
 
   # reverseつきのdirsはディレクトリの名前が辞書の逆順の配列が返る
   def test_dirs_with_reverse
-    with_work_dir do
-      system "mkdir #{@test_dirs.join(' ')}"
+    ready_test_env do
       entry_list = EntryList.new(@test_dirs, reverse: true)
       assert_equal @test_dirs.sort.reverse, entry_list.dirs
     end
@@ -82,12 +77,13 @@ class EntryListTest < Minitest::Test
 
   # entriesが空の場合empty?はtrueを返す
   def test_empty
-    system "touch #{@test_files.join(' ')}"
-    entry_list_empty = EntryList.new([])
-    entry_list_not_empty = EntryList.new(@test_files)
+    ready_test_env do
+      entry_list_empty = EntryList.new([])
+      entry_list_not_empty = EntryList.new(@test_files)
 
-    assert entry_list_empty.empty?
-    assert_equal false, entry_list_not_empty.empty?
+      assert entry_list_empty.empty?
+      assert_equal false, entry_list_not_empty.empty?
+    end
   end
 
   # baseオプションはbaseで指定したディレクトリ内のentryを返す
@@ -121,7 +117,7 @@ class EntryListMaxCharTest < Minitest::Test
       system 'id -un', out: w
       w.close
       entry_list = EntryList.new(['test_file1'])
-      assert_equal r.gets.chomp.length, entry_list.owner_max_char
+      assert_equal r.gets('').chomp.length, entry_list.owner_max_char
     end
   end
 
@@ -133,7 +129,7 @@ class EntryListMaxCharTest < Minitest::Test
       system 'id -gn', out: w
       w.close
       entry_list = EntryList.new(['test_file1'])
-      assert_equal r.gets.chomp.length, entry_list.group_max_char
+      assert_equal r.gets('').chomp.length, entry_list.group_max_char
     end
   end
 

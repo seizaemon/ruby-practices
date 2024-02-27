@@ -92,7 +92,7 @@ class FileEntryTest < Minitest::Test
     with_work_dir do
       system 'mkdir test_dir; touch test_dir/test_file'
       file_entry = FileEntry.new('test_dir/test_file')
-      assert_equal 'test_dir/test_file', file_entry.name
+      assert_equal 'test_file', file_entry.name
     end
   end
 end

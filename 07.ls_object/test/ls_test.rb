@@ -110,7 +110,7 @@ class LsTest < Minitest::Test
     end
   end
 
-  # 存在しないファイルを指定した場合
+  # 存在しないファイルを指定した場合はエラーを出力
   def test_nonexistent_file
     with_test_env do
       r, w = IO.pipe
