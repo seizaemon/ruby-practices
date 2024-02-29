@@ -24,7 +24,7 @@ class EntryList
   end
 
   def nlink_max_char
-    @entries.map { |entry|entry.nlink.to_s.length }.max
+    @entries.map { |entry| entry.nlink.to_s.length }.max
   end
 
   def owner_max_char
@@ -45,6 +45,10 @@ class EntryList
 
   def filename_max_char
     @entries.map { |entry| entry.name.length }.max
+  end
+
+  def total_blocks
+    @entries.sum(&:blocks)
   end
 
   private

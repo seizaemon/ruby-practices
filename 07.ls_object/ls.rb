@@ -36,8 +36,13 @@ unless entry_list.dirs.empty?
     entry_names = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base:)
     entry_names << '..' if hidden
 
-    dir_screen = Screen.new(EntryList.new(entry_names, base:, reverse:))
-    out = long_format ? dir_screen.out_in_detail : dir_screen.out
+    entry_list = EntryList.new(entry_names, base:, reverse:)
+    dir_screen = Screen.new(entry_list)
+    out = if long_format
+            "total #{entry_list.total_blocks}\n#{dir_screen.out_in_detail}"
+          else
+            dir_screen.out
+          end
 
     puts(argv.length == 1 ? out : "#{base}:\n#{out}")
   end

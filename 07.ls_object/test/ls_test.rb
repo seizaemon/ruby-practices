@@ -65,14 +65,15 @@ class LsTest < Minitest::Test
     ready_test_env do
       r, w = IO.pipe
       system "ruby #{__dir__}/../ls.rb -l", out: w
-      date_str = Time.now.strftime('%-m %-d %H:%M')
+      date_str = Time.now.strftime('%_m %_d %H:%M')
       w.close
 
       # rubocop:disable Layout/TrailingWhitespace
       expected = <<~TEXT
-        drwxr-xr-x  4 oden  staff  128  #{date_str} test_dir  
-        -rw-r--r--  1 oden  staff    0  #{date_str} test_file1
-        -rw-r--r--  1 oden  staff    0  #{date_str} test_file2
+        total 0
+        drwxr-xr-x  4 oden  staff  128 #{date_str} test_dir  
+        -rw-r--r--  1 oden  staff    0 #{date_str} test_file1
+        -rw-r--r--  1 oden  staff    0 #{date_str} test_file2
       TEXT
       # rubocop:enable Layout/TrailingWhitespace
       assert_equal expected, r.gets('')

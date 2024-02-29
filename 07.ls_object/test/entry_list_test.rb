@@ -160,4 +160,14 @@ class EntryListMaxCharTest < Minitest::Test
       assert_equal 'test_long_file1'.length, entry_list.filename_max_char
     end
   end
+
+  def test_total_blocks
+    with_work_dir do
+      system 'touch test_file1 test_file2'
+      system 'dd if=/dev/zero of=test_file1 bs=1024 count=1'
+      system 'dd if=/dev/zero of=test_file2 bs=1024 count=2'
+      entry_list = EntryList.new(%w[test_file1 test_file2])
+      assert_equal 16, entry_list.total_blocks
+    end
+  end
 end
