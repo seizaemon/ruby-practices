@@ -4,7 +4,6 @@
 require 'optparse'
 require_relative 'lib/entry_list'
 require_relative 'lib/screen'
-require_relative 'lib/detail_screen'
 
 hidden = false
 reverse = false
@@ -26,12 +25,9 @@ entry_list.no_existence.sort.each do |entry|
 end
 
 unless entry_list.files.empty?
-  screen = if long_format
-             DetailScreen.new(EntryList.new(entry_list.files, reverse:))
-           else
-             Screen.new(EntryList.new(entry_list.files, reverse:))
-           end
-  puts screen.out
+  screen = Screen.new(EntryList.new(entry_list.files, reverse:))
+
+  long_format ? puts(screen.out_in_detail) : puts(screen.out)
   puts unless entry_list.dirs.empty?
 end
 
@@ -40,11 +36,9 @@ unless entry_list.dirs.empty?
     entry_names = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base:)
     entry_names << '..' if hidden
 
-    dir_screen = if long_format
-                   DetailScreen.new(EntryList.new(entry_names, base:, reverse:))
-                 else
-                   Screen.new(EntryList.new(entry_names, base:, reverse:))
-                 end
-    puts(argv.length == 1 ? dir_screen.out : "#{base}:\n#{dir_screen.out}")
+    dir_screen = Screen.new(EntryList.new(entry_names, base:, reverse:))
+    out = long_format ? dir_screen.out_in_detail : dir_screen.out
+
+    puts(argv.length == 1 ? out : "#{base}:\n#{out}")
   end
 end

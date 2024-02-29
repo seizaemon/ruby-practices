@@ -24,7 +24,7 @@ class EntryList
   end
 
   def nlink_max_char
-    @entries.map { |entry| entry.nlink.to_s.length }.max
+    @entries.map { |entry|entry.nlink.to_s.length }.max
   end
 
   def owner_max_char
