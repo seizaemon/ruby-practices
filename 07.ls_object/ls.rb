@@ -21,8 +21,8 @@ argv = ['.'] if argv.empty?
 entry_list = EntryList.new(argv, reverse:)
 
 # エラー表示だけはreverseフラグにかかわらず辞書順
-entry_list.not_founds.sort.each do |not_found|
-  warn "ls: #{not_found}: No such file or directory"
+entry_list.no_existence.sort.each do |entry|
+  warn "ls: #{entry}: No such file or directory"
 end
 
 unless entry_list.files.empty?

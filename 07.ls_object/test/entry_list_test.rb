@@ -53,10 +53,10 @@ class EntryListTest < Minitest::Test
     end
   end
 
-  # 存在しないファイルを指定した場合はnot_founds辞書順でファイル名が入る
-  def test_not_founds
+  # 存在しないファイルを指定した場合はno_existenceが辞書順でファイル名が入る
+  def test_no_existence
     entry_list = EntryList.new(%w[no_file2 no_file1])
-    assert_equal %w[no_file1 no_file2], entry_list.not_founds
+    assert_equal %w[no_file1 no_file2], entry_list.no_existence
   end
 
   # dirsはディレクトリの名前が辞書順の配列が返る

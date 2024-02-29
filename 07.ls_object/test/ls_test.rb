@@ -6,7 +6,7 @@ require_relative '../test/work_dir'
 class LsTest < Minitest::Test
   include WorkDir
 
-  def with_test_env(&block)
+  def ready_test_env(&block)
     with_work_dir do
       system 'touch test_file1 test_file2 .test_hidden'
       system 'mkdir test_dir; touch test_dir/test_file3 test_dir/test_file4'
@@ -16,7 +16,7 @@ class LsTest < Minitest::Test
 
   # オプションなし
   def test_ls_normal
-    with_test_env do
+    ready_test_env do
       r, w = IO.pipe
       system "ruby #{__dir__}/../ls.rb", out: w
       w.close
@@ -30,7 +30,7 @@ class LsTest < Minitest::Test
 
   # rオプション
   def test_ls_with_reverse_option
-    with_test_env do
+    ready_test_env do
       r, w = IO.pipe
       system "ruby #{__dir__}/../ls.rb -r", out: w
       w.close
@@ -46,7 +46,7 @@ class LsTest < Minitest::Test
 
   # aオプション
   def test_ls_with_all_option
-    with_test_env do
+    ready_test_env do
       r, w = IO.pipe
       system "ruby #{__dir__}/../ls.rb -a", out: w
       w.close
@@ -62,7 +62,7 @@ class LsTest < Minitest::Test
 
   # lオプション
   def test_ls_with_l_option
-    with_test_env do
+    ready_test_env do
       r, w = IO.pipe
       system "ruby #{__dir__}/../ls.rb -l", out: w
       date_str = Time.now.strftime('%-m %-d %H:%M')
@@ -81,7 +81,7 @@ class LsTest < Minitest::Test
 
   # ディレクトリ指定
   def test_ls_with_dir_argument
-    with_test_env do
+    ready_test_env do
       r, w = IO.pipe
       system "ruby #{__dir__}/../ls.rb test_dir", out: w
       w.close
@@ -95,7 +95,7 @@ class LsTest < Minitest::Test
 
   # 複数の引数を指定した場合は通常ファイルを優先して出力する
   def test_ls_with_file_and_directory
-    with_test_env do
+    ready_test_env do
       r, w = IO.pipe
       system "ruby #{__dir__}/../ls.rb test_dir test_file1", out: w
       w.close
@@ -112,7 +112,7 @@ class LsTest < Minitest::Test
 
   # 存在しないファイルを指定した場合はエラーを出力
   def test_nonexistent_file
-    with_test_env do
+    ready_test_env do
       r, w = IO.pipe
       system "ruby #{__dir__}/../ls.rb test_dir non_existent2 non_existent1 2>&1", out: w
       w.close

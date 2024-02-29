@@ -19,7 +19,4 @@ module CreateTestFile
     end
     ['test_file', out].flatten
   end
-
-  # TODO: 複雑な階層のファイルを作成するメソッド
-
 end

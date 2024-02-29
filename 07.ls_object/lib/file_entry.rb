@@ -27,7 +27,7 @@ class FileEntry < File::Stat
   end
 
   def type
-    type_convert(ftype)
+    convert_into_type(ftype)
   end
 
   private
@@ -35,23 +35,23 @@ class FileEntry < File::Stat
   def mode_to_s(mode_octet)
     mode_special = mode_octet.shift
     mode_main = mode_octet
-    mode_convert(mode_main, mode_special)
+    convert_into_mode(mode_main, mode_special)
   end
 
-  def mode_convert(mode_octet_arr, special_octet)
+  def convert_into_mode(mode_octet, special_octet)
     mode_map = {
       '0' => '---', '1' => '--x', '2' => '-w-',
       '3' => '-wx', '4' => 'r--', '5' => 'r-x',
       '6' => 'rw-', '7' => 'rwx'
     }
     mode_arr = []
-    mode_arr << (special_octet == '4' ? mode_map[mode_octet_arr.shift].gsub(/x$/, 's').gsub(/-$/, 'S') : mode_map[mode_octet_arr.shift])
-    mode_arr << (special_octet == '2' ? mode_map[mode_octet_arr.shift].gsub(/x$/, 's').gsub(/-$/, 'S') : mode_map[mode_octet_arr.shift])
-    mode_arr << (special_octet == '1' ? mode_map[mode_octet_arr.shift].gsub(/x$/, 't').gsub(/-$/, 'T') : mode_map[mode_octet_arr.shift])
+    mode_arr << (special_octet == '4' ? mode_map[mode_octet.shift].gsub(/x$/, 's').gsub(/-$/, 'S') : mode_map[mode_octet.shift])
+    mode_arr << (special_octet == '2' ? mode_map[mode_octet.shift].gsub(/x$/, 's').gsub(/-$/, 'S') : mode_map[mode_octet.shift])
+    mode_arr << (special_octet == '1' ? mode_map[mode_octet.shift].gsub(/x$/, 't').gsub(/-$/, 'T') : mode_map[mode_octet.shift])
     mode_arr.join('')
   end
 
-  def type_convert(type_str)
+  def convert_into_type(type_str)
     return 'l' if FileTest.symlink?(@name)
     return '-' if type_str == 'file'
 

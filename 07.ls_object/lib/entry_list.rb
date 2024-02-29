@@ -5,11 +5,11 @@ require_relative 'file_entry'
 
 class EntryList
   include File::Constants
-  attr_reader :entries, :files, :dirs, :not_founds
+  attr_reader :entries, :files, :dirs, :no_existence
 
   def initialize(file_names, base: '', reverse: false)
     @entries = []
-    @not_founds = []
+    @no_existence = []
     @files = []
     @dirs = []
     create_entries(file_names, base:, reverse:)
@@ -59,7 +59,7 @@ class EntryList
       f.type == 'd' ? @dirs << entry : @files << entry
       f
     rescue Errno::ENOENT
-      @not_founds << entry
+      @no_existence << entry
     end
   end
 end
