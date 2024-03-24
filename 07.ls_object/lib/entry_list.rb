@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
+# こちらはもう使用しない
+
 require 'pathname'
-require_relative 'file_entry'
+require_relative 'ls_file_stat'
 
 class EntryList
-  include File::Constants
   attr_reader :entries, :files, :dirs, :no_existence
 
   def initialize(file_names, base: '', reverse: false)

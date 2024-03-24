@@ -2,7 +2,7 @@
 
 require 'minitest/autorun'
 require_relative '../lib/entry_list'
-require_relative '../lib/file_entry'
+require_relative '../lib/ls_file_stat'
 require_relative './work_dir'
 
 class EntryListTest < Minitest::Test
@@ -17,12 +17,12 @@ class EntryListTest < Minitest::Test
     end
   end
 
-  # entriesはファイルの名前の辞書順にFileEntryオブジェクトの配列が返る
+  # entriesはファイルの名前の辞書順にLsFileStatオブジェクトの配列が返る
   def test_entries
     ready_test_env do
       entry_list = EntryList.new(@test_files)
       @test_files.sort.each_with_index do |file, i|
-        assert_equal FileEntry.new(file), entry_list.entries[i]
+        assert_equal LsFileStat.new(file), entry_list.entries[i]
       end
     end
   end
@@ -32,7 +32,7 @@ class EntryListTest < Minitest::Test
     ready_test_env do
       entry_list = EntryList.new(@test_files, reverse: true)
       @test_files.sort.reverse.each_with_index do |entry, i|
-        assert_equal FileEntry.new(entry), entry_list.entries[i]
+        assert_equal LsFileStat.new(entry), entry_list.entries[i]
       end
     end
   end
@@ -91,7 +91,7 @@ class EntryListTest < Minitest::Test
     with_work_dir do
       system 'mkdir test_dir; touch test_dir/test_file2 test_dir/test_file1'
       entry_list = EntryList.new(%w[test_file2 test_file1], base: 'test_dir')
-      assert_equal [FileEntry.new('test_dir/test_file1'), FileEntry.new('test_dir/test_file2')], entry_list.entries
+      assert_equal [LsFileStat.new('test_dir/test_file1'), LsFileStat.new('test_dir/test_file2')], entry_list.entries
     end
   end
 end

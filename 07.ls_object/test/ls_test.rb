@@ -118,6 +118,7 @@ class LsTest < Minitest::Test
       system "ruby #{__dir__}/../ls.rb test_dir non_existent2 non_existent1 2>&1", out: w
       w.close
 
+      # 標準出力分の出力がでない
       expected = <<~TEXT
         ls: non_existent1: No such file or directory
         ls: non_existent2: No such file or directory

@@ -2,48 +2,65 @@
 # frozen_string_literal: true
 
 require 'optparse'
-require_relative 'lib/entry_list'
 require_relative 'lib/screen'
+require_relative 'lib/ls_file_stat'
 
-hidden = false
-reverse = false
-long_format = false
+def main
+  hidden = false
+  reverse = false
+  long_format = false
 
-opt = OptionParser.new
-opt.on('-a') { hidden = true }
-opt.on('-r') { reverse = true }
-opt.on('-l') { long_format = true }
+  opt = OptionParser.new
+  opt.on('-a') { hidden = true }
+  opt.on('-r') { reverse = true }
+  opt.on('-l') { long_format = true }
 
-argv = opt.parse(ARGV)
-argv = ['.'] if argv.empty?
+  argv = opt.parse(ARGV)
+  argv = ['.'] if argv.empty?
 
-entry_list = EntryList.new(argv, reverse:)
+  entries = LsFileStat.bulk_create(argv, reverse:)
 
-# エラー表示だけはreverseフラグにかかわらず辞書順
-entry_list.no_existence.sort.each do |entry|
-  warn "ls: #{entry}: No such file or directory"
+  warn_no_existence(entries[:no_existence])
+  print_file_entries(entries[:files], long_format, reverse)
+  puts unless entries[:dirs].empty?
+  print_dir_entries(entries[:dirs], long_format, reverse, hidden)
 end
 
-unless entry_list.files.empty?
-  screen = Screen.new(EntryList.new(entry_list.files, reverse:))
+def warn_no_existence(entries)
+  # エラー表示だけはreverseフラグにかかわらず辞書順
+  entries.sort.each do |entry|
+    warn "ls: #{entry}: No such file or directory"
+  end
+end
 
+def print_file_entries(entries, long_format, reverse)
+  return if entries.empty?
+
+  file_entries = LsFileStat.bulk_create(entries, reverse:)
+  screen = Screen.new(file_entries[:stats])
   long_format ? puts(screen.out_in_detail) : puts(screen.out)
-  puts unless entry_list.dirs.empty?
 end
 
-unless entry_list.dirs.empty?
-  entry_list.dirs.each do |base|
+def print_dir_entries(dir_entries, long_format, reverse, hidden)
+  return if dir_entries.empty?
+
+  dir_entries.each do |base|
     entry_names = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base:)
     entry_names << '..' if hidden
 
-    entry_list = EntryList.new(entry_names, base:, reverse:)
-    dir_screen = Screen.new(entry_list)
+    entry_list = LsFileStat.bulk_create(entry_names, base:, reverse:)
+    dir_screen = Screen.new(entry_list[:stats])
     out = if long_format
-            "total #{entry_list.total_blocks}\n#{dir_screen.out_in_detail}"
+            "total #{total_blocks(entry_list[:stats])}\n#{dir_screen.out_in_detail}"
           else
             dir_screen.out
           end
-
-    puts(argv.length == 1 ? out : "#{base}:\n#{out}")
+    puts(dir_entries == ['.'] ? out : "#{base}:\n#{out}")
   end
 end
+
+def total_blocks(entries)
+  entries.sum(&:blocks)
+end
+
+main
