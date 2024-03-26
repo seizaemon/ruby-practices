@@ -26,8 +26,4 @@ module EntriesHelper
   def filename_max_char(entries)
     entries.map { |entry| entry.name.length }.max
   end
-
-  def total_blocks(entries)
-    entries.sum(&:blocks)
-  end
 end
