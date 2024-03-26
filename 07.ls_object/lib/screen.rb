@@ -26,7 +26,7 @@ class Screen
   end
 
   def out_in_detail
-    nlink_width= nlink_max_char(@entry_list)
+    nlink_width = nlink_max_char(@entry_list)
     owner_width = owner_max_char(@entry_list)
     group_width = group_max_char(@entry_list)
     file_size_width = size_max_char(@entry_list)
