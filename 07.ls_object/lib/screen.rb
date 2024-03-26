@@ -26,29 +26,22 @@ class Screen
   end
 
   def out_in_detail
-    # fmt = "%1s%8s  % #{@entry_list.nlink_max_char}s " \
-    #   +"% #{owner_max_char(@entry_list)}s  " \
-    #   +"% #{group_max_char(@entry_list)}s  " \
-    #   +"% #{size_max_char(@entry_list)}s " \
-    #   +"% #{update_time_max_char(@entry_list)}s " \
-    #   +"%-#{filename_max_char(@entry_list)}s"
+    nlink_width= nlink_max_char(@entry_list)
+    owner_width = owner_max_char(@entry_list)
+    group_width = group_max_char(@entry_list)
+    file_size_width = size_max_char(@entry_list)
+    update_time_width = update_time_max_char(@entry_list)
+    filename_width = filename_max_char(@entry_list)
 
-    nlink_max_length = nlink_max_char(@entry_list)
-    owner_max_length = owner_max_char(@entry_list)
-    group_max_length = group_max_char(@entry_list)
-    file_size_max_length = size_max_char(@entry_list)
-    update_time_max_length = update_time_max_char(@entry_list)
-    filename_max_length = filename_max_char(@entry_list)
-    # TODO: 複雑なformatからの脱却
     @entry_list.map do |entry|
       output = []
       output << format('%<type>1s%<permission>8s ', type: entry.type, permission: entry.permission)
-      output << format("%<nlink> #{nlink_max_length}s", nlink: entry.nlink)
-      output << format("%<owner> #{owner_max_length}s ", owner: entry.owner)
-      output << format("%<group> #{group_max_length}s ", group: entry.group)
-      output << format("%<size> #{file_size_max_length}s", size: entry.size)
-      output << format("%<update_time> #{update_time_max_length}s", update_time: entry.update_time)
-      output << format("%<name>-#{filename_max_length}s", name: entry.name)
+      output << format("%<nlink> #{nlink_width}s", nlink: entry.nlink)
+      output << format("%<owner> #{owner_width}s ", owner: entry.owner)
+      output << format("%<group> #{group_width}s ", group: entry.group)
+      output << format("%<size> #{file_size_width}s", size: entry.size)
+      output << format("%<update_time> #{update_time_width}s", update_time: entry.update_time)
+      output << format("%<name>-#{filename_width}s", name: entry.name)
       output.join(' ')
     end.join("\n")
   end

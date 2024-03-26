@@ -115,7 +115,7 @@ class LsTest < Minitest::Test
   def test_nonexistent_file
     ready_test_env do
       r, w = IO.pipe
-      system "ruby #{__dir__}/../ls.rb test_dir non_existent2 non_existent1 2>&1", out: w
+      system "ruby #{__dir__}/../ls.rb test_dir non_existent2 non_existent1 2>&1 ", out: w
       w.close
 
       # 標準出力分の出力がでない

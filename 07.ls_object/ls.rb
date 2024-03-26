@@ -22,8 +22,12 @@ def main
 
   warn_no_existence(entries[:no_existence])
   print_file_entries(entries[:files], long_format, reverse)
-  puts unless entries[:dirs].empty?
+
+  return if entries[:dirs].empty?
+
+  puts
   print_dir_entries(entries[:dirs], long_format, reverse, hidden)
+
 end
 
 def warn_no_existence(entries)
