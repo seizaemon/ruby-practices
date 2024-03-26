@@ -27,7 +27,6 @@ def main
 
   puts
   print_dir_entries(entries[:dirs], long_format, reverse, hidden)
-
 end
 
 def warn_no_existence(entries)
