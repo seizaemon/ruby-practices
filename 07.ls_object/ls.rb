@@ -25,7 +25,7 @@ def main
 
   return if entries[:dirs].empty?
 
-  puts
+  puts unless entries[:files].empty?
   print_dir_entries(entries[:dirs], long_format, reverse, hidden)
 end
 
@@ -47,6 +47,7 @@ end
 def print_dir_entries(dir_entries, long_format, reverse, hidden)
   return if dir_entries.empty?
 
+  # TODO: ここをentries => entryの形に出力は上位で分岐させる
   dir_entries.each do |base|
     entry_names = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base:)
     entry_names << '..' if hidden

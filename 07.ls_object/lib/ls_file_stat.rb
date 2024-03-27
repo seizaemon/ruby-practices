@@ -2,6 +2,8 @@
 
 require 'etc'
 require 'time'
+require 'pathname'
+
 class LsFileStat < File::Stat
   attr_reader :name
 
@@ -81,7 +83,7 @@ class << LsFileStat
     rescue Errno::ENOENT
       no_existence << entry
     end
-    # TODO: ここの見え方はこれでいいのか
+
     { stats: result, files:, dirs:, no_existence: }
   end
 end

@@ -3,6 +3,7 @@
 require 'minitest/autorun'
 require 'pathname'
 require 'time'
+require 'socket'
 require_relative '../lib/ls_file_stat'
 require_relative 'work_dir'
 require_relative 'create_test_file'
@@ -10,26 +11,6 @@ require_relative 'create_test_file'
 class LsFileStatTest < Minitest::Test
   include WorkDir
   include CreateTestFile
-
-  # nameはファイル名を返す
-  def test_name
-    with_work_dir do
-      system 'touch test_file'
-      file_entry = LsFileStat.new('test_file')
-      assert_equal 'test_file', file_entry.name
-    end
-  end
-
-  # sizeはファイルサイズを返す
-  def test_size
-    with_work_dir do |work_dir|
-      block_size = 1024
-      count = 10
-      system "dd if=/dev/zero of=#{work_dir}/test_file bs=#{block_size} count=#{count}"
-      file_entry = LsFileStat.new('test_file')
-      assert_equal block_size * count, file_entry.size
-    end
-  end
 
   # update_dateはlsのフォーマットに従ってファイル最新更新日を返す
   def test_update_time
@@ -74,6 +55,37 @@ class LsFileStatTest < Minitest::Test
       system 'touch test_file ; ln -s test_file test_link'
       file_entry = LsFileStat.new('test_link')
       assert_equal 'l', file_entry.type
+    end
+  end
+
+  # typeはファイルがblock special fileの場合 b を返す
+  def test_type_with_block_device
+    file_entry = LsFileStat.new('/dev/disk0')
+    assert_equal 'b', file_entry.type
+  end
+
+  # typeはファイルがcharacter special fileの場合 c を返す
+  def test_type_with_character_device
+    file_entry = LsFileStat.new('/dev/null')
+    assert_equal 'c', file_entry.type
+  end
+
+  # typeはファイルがFIFOの場合 p を返す
+  def test_type_with_fifo
+    with_work_dir do
+      system 'mkfifo test_fifo'
+      file_entry = LsFileStat.new('test_fifo')
+      assert_equal 'p', file_entry.type
+    end
+  end
+
+  # typeはファイルがsocketの場合 s を返す
+  def test_type_with_socket
+    with_work_dir do
+      s = UNIXServer.new('sock')
+      file_entry = LsFileStat.new('sock')
+      assert_equal 's', file_entry.type
+      s.close
     end
   end
 

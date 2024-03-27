@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'minitest/autorun'
+require 'io/console/size'
+require 'time'
 require_relative '../lib/screen'
 require_relative '../lib/ls_file_stat'
 require_relative './work_dir'
-require 'io/console/size'
-require 'time'
 
 class ScreenTest < Minitest::Test
   include WorkDir

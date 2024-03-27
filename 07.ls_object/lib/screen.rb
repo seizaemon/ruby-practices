@@ -1,11 +1,8 @@
 # frozen_string_literal: true
 
 require 'io/console/size'
-require_relative 'entries_helper'
 
 class Screen
-  include EntriesHelper
-
   def initialize(entry_list)
     @entry_list = entry_list
     _, @console_width = IO.console_size
@@ -15,7 +12,7 @@ class Screen
     return '' if @entry_list.empty?
 
     row_num = calc_row_num(@console_width)
-    longest_name_length = filename_max_char(@entry_list)
+    longest_name_length = filename_max_length(@entry_list)
 
     # 先頭列のindexを先に決め、各行のindexを決定していく
     (0..row_num - 1).map do |r|
@@ -26,12 +23,12 @@ class Screen
   end
 
   def out_in_detail
-    nlink_width = nlink_max_char(@entry_list)
-    owner_width = owner_max_char(@entry_list)
-    group_width = group_max_char(@entry_list)
-    file_size_width = size_max_char(@entry_list)
-    update_time_width = update_time_max_char(@entry_list)
-    filename_width = filename_max_char(@entry_list)
+    nlink_width = nlink_max_length(@entry_list)
+    owner_width = owner_max_length(@entry_list)
+    group_width = group_max_length(@entry_list)
+    file_size_width = size_max_length(@entry_list)
+    update_time_width = update_time_max_length(@entry_list)
+    filename_width = filename_max_length(@entry_list)
 
     @entry_list.map do |entry|
       output = []
@@ -50,12 +47,36 @@ class Screen
 
   def calc_column_num(width)
     column = 1
-    max_char_length = filename_max_char(@entry_list)
+    max_char_length = filename_max_length(@entry_list)
     column += 1 until ((max_char_length + 1) * column + max_char_length) > width
     column
   end
 
   def calc_row_num(width)
     (@entry_list.length.to_f / calc_column_num(width)).ceil
+  end
+
+  def nlink_max_length(entries)
+    entries.map { |entry| entry.nlink.to_s.length }.max
+  end
+
+  def owner_max_length(entries)
+    entries.map { |entry| entry.owner.length }.max
+  end
+
+  def group_max_length(entries)
+    entries.map { |entry| entry.group.length }.max
+  end
+
+  def size_max_length(entries)
+    entries.map { |entry| entry.size.to_s.length }.max
+  end
+
+  def update_time_max_length(entries)
+    entries.map { |entry| entry.update_time.length }.max
+  end
+
+  def filename_max_length(entries)
+    entries.map { |entry| entry.name.length }.max
   end
 end
