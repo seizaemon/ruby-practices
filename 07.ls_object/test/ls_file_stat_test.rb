@@ -22,7 +22,7 @@ class LsFileStatTest < Minitest::Test
     end
   end
 
-  # ownerはファイルの所属オーナーを帰す
+  # ownerはファイルの所属オーナーを返す
   def test_owner
     with_work_dir do
       test_file_name, user, = filename_with_owner_and_group
@@ -31,12 +31,30 @@ class LsFileStatTest < Minitest::Test
     end
   end
 
-  # groupはファイルの所属グループを帰す
+  # groupはファイルの所属グループを返す
   def test_group
     with_work_dir do
       test_file_name, _, group = filename_with_owner_and_group
       file_entry = LsFileStat.new(test_file_name)
       assert_equal group, file_entry.group
+    end
+  end
+
+  # 通常ファイルの場合ファイル名を返す
+  def test_name_with_normal_file
+    with_work_dir do
+      test_file_name, = filename_with_owner_and_group
+      file_entry = LsFileStat.new(test_file_name)
+      assert_equal test_file_name, file_entry.name
+    end
+  end
+
+  # リンクの場合ファイル名はオリジナルファイルのパスを付与して返す
+  def test_name_with_link
+    with_work_dir do
+      system 'touch test_file ; ln -s test_file test_link'
+      file_entry = LsFileStat.new('test_link')
+      assert_equal 'test_link -> test_file', file_entry.name
     end
   end
 

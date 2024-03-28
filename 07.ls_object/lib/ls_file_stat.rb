@@ -5,8 +5,6 @@ require 'time'
 require 'pathname'
 
 class LsFileStat < File::Stat
-  attr_reader :name
-
   NULL = '-'
   READ = 'r'
   WRITE = 'w'
@@ -14,7 +12,14 @@ class LsFileStat < File::Stat
 
   def initialize(file_path)
     super
-    @name = File.basename file_path
+    @path = file_path
+  end
+
+  def name
+    base = File.basename @path
+    return "#{base} -> #{readlink}" if type == 'l'
+
+    base
   end
 
   def permission
@@ -42,6 +47,12 @@ class LsFileStat < File::Stat
 
   private
 
+  def readlink
+    org_path = Pathname.new(File.readlink(@path))
+    link_path = Pathname.new(@path)
+    org_path.relative_path_from(link_path.dirname).to_s
+  end
+
   def convert_into_mode(mode_octet, special_octet)
     mode_map = {
       '0' => "#{NULL}#{NULL}#{NULL}",
@@ -61,7 +72,7 @@ class LsFileStat < File::Stat
   end
 
   def convert_into_type(type_str)
-    return 'l' if FileTest.symlink?(@name)
+    return 'l' if FileTest.symlink?(@path)
     return '-' if type_str == 'file'
     return 'p' if type_str == 'fifo'
 
