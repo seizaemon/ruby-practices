@@ -26,7 +26,11 @@ def main
   return if entries[:dirs].empty?
 
   puts unless entries[:files].empty?
-  print_dir_entries(entries[:dirs], long_format, reverse, hidden)
+  entries[:dirs].each do |entry|
+    puts "#{entry}:" unless entries[:files].empty? && entries[:no_existence].empty?
+    puts "#{entry}:" unless entries[:dirs].count == 1
+    print_dir_entry(entry, long_format, reverse, hidden)
+  end
 end
 
 def warn_no_existence(entries)
@@ -44,22 +48,18 @@ def print_file_entries(entries, long_format, reverse)
   long_format ? puts(screen.out_in_detail) : puts(screen.out)
 end
 
-def print_dir_entries(dir_entries, long_format, reverse, hidden)
-  return if dir_entries.empty?
+def print_dir_entry(base, long_format, reverse, hidden)
+  return if base.empty?
 
-  # TODO: ここをentries => entryの形に出力は上位で分岐させる
-  dir_entries.each do |base|
-    entry_names = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base:)
-    entry_names << '..' if hidden
+  entry_names = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base:)
+  entry_names << '..' if hidden
 
-    entry_list = LsFileStat.bulk_create(entry_names, base:, reverse:)
-    dir_screen = Screen.new(entry_list[:stats])
-    out = if long_format
-            "total #{total_blocks(entry_list[:stats])}\n#{dir_screen.out_in_detail}"
-          else
-            dir_screen.out
-          end
-    puts(dir_entries == ['.'] ? out : "#{base}:\n#{out}")
+  entry_list = LsFileStat.bulk_create(entry_names, base:, reverse:)
+  dir_screen = Screen.new(entry_list[:stats])
+  if long_format
+    puts "total #{total_blocks(entry_list[:stats])}\n#{dir_screen.out_in_detail}"
+  else
+    puts dir_screen.out
   end
 end
 

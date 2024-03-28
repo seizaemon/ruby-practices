@@ -63,6 +63,7 @@ class LsFileStat < File::Stat
   def convert_into_type(type_str)
     return 'l' if FileTest.symlink?(@name)
     return '-' if type_str == 'file'
+    return 'p' if type_str == 'fifo'
 
     type_str[0].downcase
   end
