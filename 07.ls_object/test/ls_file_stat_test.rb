@@ -40,12 +40,18 @@ class LsFileStatTest < Minitest::Test
     end
   end
 
-  # 通常ファイルの場合ファイル名を返す
+  # 通常ファイルの場合ファイルパスを返す
   def test_name_with_normal_file
     with_work_dir do
+      # カレントディレクトリにあるファイルの場合
       test_file_name, = filename_with_owner_and_group
-      file_entry = LsFileStat.new(test_file_name)
-      assert_equal test_file_name, file_entry.name
+      entry1 = LsFileStat.new(test_file_name)
+      assert_equal test_file_name, entry1.name
+
+      # カレントにないファイルの場合
+      system 'mkdir test_dir ; touch test_dir/test_file3'
+      entry2 = LsFileStat.new('test_dir/test_file3')
+      assert_equal 'test_dir/test_file3', entry2.name
     end
   end
 
@@ -67,6 +73,25 @@ class LsFileStatTest < Minitest::Test
     end
   end
 
+  # sizeはファイルサイズを返す
+  def test_size_with_normal_file
+    with_work_dir do
+      system 'touch test_file1 ; dd if=/dev/zero of=test_file1 bs=128 count=1'
+      file_entry = LsFileStat.new('test_file1')
+      assert_equal '128', file_entry.str_size
+    end
+  end
+
+  # block fileとcharacter fileの場合、sizeはmajor numberを返す
+  def test_size_with_special_file
+    with_work_dir do
+      character_entry = LsFileStat.new('/dev/null')
+      block_entry = LsFileStat.new('/dev/disk0')
+      assert_equal '0x1000000', block_entry.str_size
+      assert_equal '0x3000002', character_entry.str_size
+    end
+  end
+
   # typeはファイルがsymlinkの場合 l を返す
   def test_type_with_link
     with_work_dir do
@@ -75,7 +100,9 @@ class LsFileStatTest < Minitest::Test
       assert_equal 'l', file_entry.type
     end
   end
+end
 
+class LsFileStatTypeTest
   # typeはファイルがblock special fileの場合 b を返す
   def test_type_with_block_device
     file_entry = LsFileStat.new('/dev/disk0')

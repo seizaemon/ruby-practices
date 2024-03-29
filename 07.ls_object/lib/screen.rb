@@ -36,7 +36,7 @@ class Screen
       output << format("%<nlink> #{nlink_width}s", nlink: entry.nlink)
       output << format("%<owner> #{owner_width}s ", owner: entry.owner)
       output << format("%<group> #{group_width}s ", group: entry.group)
-      output << format("%<size> #{file_size_width}s", size: entry.size)
+      output << format("%<size> #{file_size_width}s", size: entry.str_size)
       output << format("%<update_time> #{update_time_width}s", update_time: entry.update_time)
       output << format("%<name>-#{filename_width}s", name: entry.name)
       output.join(' ')

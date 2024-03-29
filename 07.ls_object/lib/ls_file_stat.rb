@@ -16,10 +16,15 @@ class LsFileStat < File::Stat
   end
 
   def name
-    base = File.basename @path
-    return "#{base} -> #{readlink}" if type == 'l'
+    return "#{@path} -> #{readlink}" if type == 'l'
 
-    base
+    @path
+  end
+
+  def str_size
+    return "0x#{rdev_major}00000#{rdev_minor}" if type == 'b' || type == 'c'
+
+    size.to_s
   end
 
   def permission
@@ -49,8 +54,7 @@ class LsFileStat < File::Stat
 
   def readlink
     org_path = Pathname.new(File.readlink(@path))
-    link_path = Pathname.new(@path)
-    org_path.relative_path_from(link_path.dirname).to_s
+    org_path.relative_path_from(Pathname.new('.')).to_s
   end
 
   def convert_into_mode(mode_octet, special_octet)
