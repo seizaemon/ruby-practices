@@ -85,21 +85,21 @@ class LsFileStat < File::Stat
 end
 
 class << LsFileStat
-  def bulk_create(entries, base: '', reverse: false)
+  def bulk_create(file_names, base: '', reverse: false)
+    no_existence = []
     files = []
     dirs = []
-    no_existence = []
 
-    entries_processed = reverse ? entries.reverse : entries.sort
+    entries = reverse ? file_names.reverse : file_names.sort
 
-    result = entries_processed.map do |entry|
+    stats = entries.map do |entry|
       f = LsFileStat.new((Pathname(base) + entry).to_s)
-      f.type == 'd' ? dirs << entry : files << entry
+      f.type == 'd' ? dirs << f : files << f
       f
     rescue Errno::ENOENT
       no_existence << entry
     end
 
-    { stats: result, files:, dirs:, no_existence: }
+    { all: stats, files:, dirs:, no_existence: }
   end
 end

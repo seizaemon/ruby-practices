@@ -3,42 +3,35 @@
 require 'io/console/size'
 
 class Screen
-  def initialize(entry_list)
-    @entry_list = entry_list
+  def initialize(bulk_created_stats)
+    @file_stats = bulk_created_stats
     _, @console_width = IO.console_size
   end
 
   def out
-    return '' if @entry_list.empty?
+    return '' if @file_stats.empty?
 
-    row_num = calc_row_num(@console_width)
-    longest_name_length = filename_max_length(@entry_list)
+    max_row_num = calc_max_row_num(@console_width)
+    longest_name_length = filename_max_length
 
-    # 先頭列のindexを先に決め、各行のindexを決定していく
-    (0..row_num - 1).map do |r|
-      row_indexes = (r..@entry_list.length - 1).step(row_num).to_a
-      fmt = (["%-#{longest_name_length}s"] * row_indexes.length).join(' ')
-      format fmt, *(row_indexes.map { |i| @entry_list[i].name })
+    # 各行の先頭列のindexを決め、各行の内容を決定していく
+    (0..max_row_num - 1).map do |row_index|
+      column_indexes = (row_index..@file_stats.length - 1).step(max_row_num).to_a
+      fmt_in_row = (["%-#{longest_name_length}s"] * column_indexes.length).join(' ')
+      format fmt_in_row, *(column_indexes.map { |i| @file_stats[i].name })
     end.join("\n")
   end
 
   def out_in_detail
-    nlink_width = nlink_max_length(@entry_list)
-    owner_width = owner_max_length(@entry_list)
-    group_width = group_max_length(@entry_list)
-    file_size_width = size_max_length(@entry_list)
-    update_time_width = update_time_max_length(@entry_list)
-    filename_width = filename_max_length(@entry_list)
-
-    @entry_list.map do |entry|
+    @file_stats.map do |file_stat|
       output = []
-      output << format('%<type>1s%<permission>8s ', type: entry.type, permission: entry.permission)
-      output << format("%<nlink> #{nlink_width}s", nlink: entry.nlink)
-      output << format("%<owner> #{owner_width}s ", owner: entry.owner)
-      output << format("%<group> #{group_width}s ", group: entry.group)
-      output << format("%<size> #{file_size_width}s", size: entry.str_size)
-      output << format("%<update_time> #{update_time_width}s", update_time: entry.update_time)
-      output << format("%<name>-#{filename_width}s", name: entry.name)
+      output << format('%<type>1s%<permission>8s ', type: file_stat.type, permission: file_stat.permission)
+      output << format("%<nlink> #{nlink_max_length}s", nlink: file_stat.nlink)
+      output << format("%<owner> #{owner_max_length}s ", owner: file_stat.owner)
+      output << format("%<group> #{group_max_length}s ", group: file_stat.group)
+      output << format("%<size> #{size_max_length}s", size: file_stat.str_size)
+      output << format("%<update_time> #{update_time_max_length}s", update_time: file_stat.update_time)
+      output << format("%<name>-#{filename_max_length}s", name: file_stat.name)
       output.join(' ')
     end.join("\n")
   end
@@ -47,36 +40,40 @@ class Screen
 
   def calc_column_num(width)
     column = 1
-    max_char_length = filename_max_length(@entry_list)
+    max_char_length = filename_max_length
     column += 1 until ((max_char_length + 1) * column + max_char_length) > width
     column
   end
 
-  def calc_row_num(width)
-    (@entry_list.length.to_f / calc_column_num(width)).ceil
+  def calc_max_row_num(width)
+    (@file_stats.length.to_f / calc_column_num(width)).ceil
   end
 
-  def nlink_max_length(entries)
-    entries.map { |entry| entry.nlink.to_s.length }.max
+  def nlink_max_length
+    max_str_length @file_stats.map(&:nlink)
   end
 
-  def owner_max_length(entries)
-    entries.map { |entry| entry.owner.length }.max
+  def owner_max_length
+    max_str_length @file_stats.map(&:owner)
   end
 
-  def group_max_length(entries)
-    entries.map { |entry| entry.group.length }.max
+  def group_max_length
+    max_str_length @file_stats.map(&:group)
   end
 
-  def size_max_length(entries)
-    entries.map { |entry| entry.size.to_s.length }.max
+  def size_max_length
+    max_str_length @file_stats.map(&:size)
   end
 
-  def update_time_max_length(entries)
-    entries.map { |entry| entry.update_time.length }.max
+  def update_time_max_length
+    max_str_length @file_stats.map(&:update_time)
   end
 
-  def filename_max_length(entries)
-    entries.map { |entry| entry.name.length }.max
+  def filename_max_length
+    max_str_length @file_stats.map(&:name)
+  end
+
+  def max_str_length(list)
+    list.map { |e| e.to_s.length }.max
   end
 end

@@ -31,7 +31,7 @@ class ScreenTest < Minitest::Test
     with_work_dir do
       r, w = IO.pipe
       entries = LsFileStat.bulk_create(create_test_files(3))
-      screen = Screen.new(entries[:stats])
+      screen = Screen.new(entries[:all])
       w.puts screen.out
       w.close
 
@@ -46,7 +46,7 @@ class ScreenTest < Minitest::Test
     with_work_dir do
       r, w = IO.pipe
       entries = LsFileStat.bulk_create(create_test_files(file_num))
-      screen = Screen.new(entries[:stats])
+      screen = Screen.new(entries[:all])
       w.puts screen.out
       w.close
 
@@ -64,7 +64,7 @@ class ScreenTest < Minitest::Test
     with_work_dir do
       r, w = IO.pipe
       entries = LsFileStat.bulk_create([])
-      screen = Screen.new(entries[:stats])
+      screen = Screen.new(entries[:all])
       w.puts screen.out
       w.close
       assert_nil r.gets('')
@@ -97,7 +97,7 @@ class ScreenInDetailTest < Minitest::Test
       system 'touch test_file2 ; chmod 421 test_file2'
       system 'touch test_long_file1 ; chmod 777 test_long_file1'
       entries = LsFileStat.bulk_create(%w[test_file2 test_file1 test_long_file1])
-      screen = Screen.new(entries[:stats])
+      screen = Screen.new(entries[:all])
       r, w = IO.pipe
       w.puts screen.out_in_detail
       w.close

@@ -18,18 +18,18 @@ def main
   argv = opt.parse(ARGV)
   argv = ['.'] if argv.empty?
 
-  entries = LsFileStat.bulk_create(argv, reverse:)
+  file_stats = LsFileStat.bulk_create(argv, reverse:)
 
-  warn_no_existence(entries[:no_existence])
-  print_file_entries(entries[:files], long_format, reverse)
+  warn_no_existence(file_stats[:no_existence])
+  print_file_stats(file_stats[:files], long_format)
 
-  return if entries[:dirs].empty?
+  return if file_stats[:dirs].empty?
 
-  puts unless entries[:files].empty?
-  entries[:dirs].each do |entry|
-    puts "#{entry}:" unless entries[:files].empty? && entries[:no_existence].empty?
-    puts "#{entry}:" unless entries[:dirs].count == 1
-    print_dir_entry(entry, long_format, reverse, hidden)
+  puts unless file_stats[:files].empty?
+  file_stats[:dirs].each do |stat|
+    puts "#{stat.name}:" unless file_stats[:files].empty? && file_stats[:no_existence].empty?
+    puts "#{stat.name}:" unless file_stats[:dirs].count == 1
+    print_dir_stats(stat, long_format, reverse, hidden)
   end
 end
 
@@ -40,31 +40,30 @@ def warn_no_existence(entries)
   end
 end
 
-def print_file_entries(entries, long_format, reverse)
-  return if entries.empty?
+def print_file_stats(file_stats, long_format)
+  return if file_stats.empty?
 
-  file_entries = LsFileStat.bulk_create(entries, reverse:)
-  screen = Screen.new(file_entries[:stats])
+  screen = Screen.new(file_stats)
   long_format ? puts(screen.out_in_detail) : puts(screen.out)
 end
 
-def print_dir_entry(base, long_format, reverse, hidden)
-  return if base.empty?
+def print_dir_stats(dir_stat, long_format, reverse, hidden)
+  file_names = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base: dir_stat.name)
+  file_names << '..' if hidden
 
-  entry_names = Dir.glob('*', (hidden ? File::FNM_DOTMATCH : 0), base:)
-  entry_names << '..' if hidden
-
-  entry_list = LsFileStat.bulk_create(entry_names, base:, reverse:)
-  dir_screen = Screen.new(entry_list[:stats])
-  if long_format
-    puts "total #{total_blocks(entry_list[:stats])}\n#{dir_screen.out_in_detail}"
-  else
-    puts dir_screen.out
+  Dir.chdir(dir_stat.name) do
+    stats = LsFileStat.bulk_create(file_names, reverse:)
+    dir_screen = Screen.new(stats[:all])
+    if long_format
+      puts "total #{total_blocks(stats[:all])}\n#{dir_screen.out_in_detail}"
+    else
+      puts dir_screen.out
+    end
   end
 end
 
-def total_blocks(entries)
-  entries.sum(&:blocks)
+def total_blocks(file_stats)
+  file_stats.sum(&:blocks)
 end
 
 main
