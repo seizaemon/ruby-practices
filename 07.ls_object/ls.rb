@@ -18,24 +18,24 @@ def main
   argv = opt.parse(ARGV)
   argv = ['.'] if argv.empty?
 
-  file_stats = LsFileStat.bulk_create(argv, reverse:)
+  stats = LsFileStat.bulk_create(argv, reverse:)
 
-  warn_no_existence(file_stats[:no_existence])
-  print_file_stats(file_stats[:files], long_format)
+  warn_no_existence(stats[:no_existence])
+  print_file_stats(stats[:files], long_format)
 
-  return if file_stats[:dirs].empty?
+  return if stats[:dirs].empty?
 
-  puts unless file_stats[:files].empty?
-  file_stats[:dirs].each do |stat|
-    puts "#{stat.name}:" unless file_stats[:files].empty? && file_stats[:no_existence].empty?
-    puts "#{stat.name}:" unless file_stats[:dirs].count == 1
+  puts unless stats[:files].empty?
+  stats[:dirs].each do |stat|
+    puts "#{stat.name}:" unless stats[:files].empty? && stats[:no_existence].empty?
+    puts "#{stat.name}:" unless stats[:dirs].count == 1
     print_dir_stats(stat, long_format, reverse, hidden)
   end
 end
 
-def warn_no_existence(entries)
+def warn_no_existence(list_of_no_existence)
   # エラー表示だけはreverseフラグにかかわらず辞書順
-  entries.sort.each do |entry|
+  list_of_no_existence.sort.each do |entry|
     warn "ls: #{entry}: No such file or directory"
   end
 end

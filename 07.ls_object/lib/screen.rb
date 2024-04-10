@@ -3,8 +3,8 @@
 require 'io/console/size'
 
 class Screen
-  def initialize(bulk_created_stats)
-    @file_stats = bulk_created_stats
+  def initialize(bulk_created_ls_file_stats)
+    @file_stats = bulk_created_ls_file_stats
     _, @console_width = IO.console_size
   end
 
