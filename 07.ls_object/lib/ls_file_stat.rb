@@ -4,34 +4,41 @@ require 'etc'
 require 'time'
 require 'pathname'
 
-class LsFileStat < File::Stat
-  NULL = '-'
+class LsFileStat
+  DISABLE = '-'
   READ = 'r'
   WRITE = 'w'
   EXEC = 'x'
+  MODE_MAP = {
+    '0' => "#{DISABLE}#{DISABLE}#{DISABLE}",
+    '1' => "#{DISABLE}#{DISABLE}#{EXEC}",
+    '2' => "#{DISABLE}#{WRITE}#{DISABLE}",
+    '3' => "#{DISABLE}#{WRITE}#{EXEC}",
+    '4' => "#{READ}#{DISABLE}#{DISABLE}",
+    '5' => "#{READ}#{DISABLE}#{EXEC}",
+    '6' => "#{READ}#{WRITE}#{NULL}",
+    '7' => "#{READ}#{WRITE}#{EXEC}"
+  }.freeze
 
   def initialize(file_path)
-    super
-    @path = file_path
+    @stat = File::Stat.new file_path
   end
 
   def name
-    return "#{@path} -> #{readlink}" if type == 'l'
+    return "#{@stat.name} -> #{readlink}" if @stat.symlink?
 
-    @path
+    @stat.name
   end
 
   def str_size
-    return "0x#{rdev_major}00000#{rdev_minor}" if type == 'b' || type == 'c'
+    return "0x#{@stat.rdev_major}00000#{@stat.rdev_minor}" if @stat.blockdev? || @stat.chardev?
 
     size.to_s
   end
 
   def permission
-    mode_octet = mode.to_s(8)[-4..].chars
-    mode_special = mode_octet[0]
-    mode_main = mode_octet[1..3]
-    convert_into_mode(mode_main, mode_special)
+    mode_octet = @stat.mode.to_s(8)[-4..].chars
+    convert_mode_str mode_octet
   end
 
   def owner
@@ -43,63 +50,57 @@ class LsFileStat < File::Stat
   end
 
   def update_time
-    Time.parse(atime.to_s).strftime('%_m %_d %H:%M')
+    Time.parse(@stat.atime.to_s).strftime('%_m %_d %H:%M')
   end
 
   def type
-    convert_into_type(ftype)
+    return 'l' if @stat.symlink?
+    return '-' if @stat.file?
+    return 'p' if @stat.ftype == 'fifo'
+
+    @stat.ftype.downcase
+  end
+
+  def self.bulk_create(paths, base: '', reverse: false)
+    missing_paths = []
+    stats = []
+
+    paths_sorted = reverse ? paths.sort.reverse : paths.sort
+
+    paths_sorted.each do |path|
+      stats << LsFileStat.new(File.join(base, file_name))
+    rescue Errno::ENOENT
+      missing << path
+    end
+
+    # エラー時の表示は省略しました
+    # エラー表示だけはreverseフラグにかかわらず辞書順
+    # missing_paths.each { |path| warn "ls: #{path}: No such file or directory" }
+
+    return stats
   end
 
   private
 
   def readlink
-    org_path = Pathname.new(File.readlink(@path))
+    # Pathnameの登場が唐突
+    org_path = Pathname.new(File.readlink(@stat.name))
     org_path.relative_path_from(Pathname.new('.')).to_s
   end
 
-  def convert_into_mode(mode_octet, special_octet)
-    mode_map = {
-      '0' => "#{NULL}#{NULL}#{NULL}",
-      '1' => "#{NULL}#{NULL}#{EXEC}",
-      '2' => "#{NULL}#{WRITE}#{NULL}",
-      '3' => "#{NULL}#{WRITE}#{EXEC}",
-      '4' => "#{READ}#{NULL}#{NULL}",
-      '5' => "#{READ}#{NULL}#{EXEC}",
-      '6' => "#{READ}#{WRITE}#{NULL}",
-      '7' => "#{READ}#{WRITE}#{EXEC}"
-    }
-    mode_arr = []
-    mode_arr << (special_octet == '4' ? mode_map[mode_octet[0]].gsub(/x$/, 's').gsub(/-$/, 'S') : mode_map[mode_octet[0]])
-    mode_arr << (special_octet == '2' ? mode_map[mode_octet[1]].gsub(/x$/, 's').gsub(/-$/, 'S') : mode_map[mode_octet[1]])
-    mode_arr << (special_octet == '1' ? mode_map[mode_octet[2]].gsub(/x$/, 't').gsub(/-$/, 'T') : mode_map[mode_octet[2]])
-    mode_arr.join
+  def convert_mode_str(mode_octet)
+    owner_mode_str = MODE_MAP[mode_octet[0]]
+    group_mode_str = MODE_MAP[mode_octet[1]]
+    other_mode_str = MODE_MAP[mode_octet[2]]
+
+    owner_mode_str = convert_setid_str(owner_mode_str) if @stat.setuid?
+    group_mode_str = convert_setid_str(group_mode_str) if @stat.setgid?
+    other_mode_str = other_mode_str.gsub(/x$/, 't').gsub(/-$/, 'T') if @stat.sticky?
+
+    [owner_mode_str, group_mode_str, other_mode_str].join('')
   end
 
-  def convert_into_type(type_str)
-    return 'l' if FileTest.symlink?(@path)
-    return '-' if type_str == 'file'
-    return 'p' if type_str == 'fifo'
-
-    type_str[0].downcase
-  end
-end
-
-class << LsFileStat
-  def bulk_create(file_names, base: '', reverse: false)
-    no_existence = []
-    files = []
-    dirs = []
-
-    entries = reverse ? file_names.reverse : file_names.sort
-
-    stats = entries.map do |entry|
-      f = LsFileStat.new((Pathname(base) + entry).to_s)
-      f.type == 'd' ? dirs << f : files << f
-      f
-    rescue Errno::ENOENT
-      no_existence << entry
-    end
-
-    { all: stats, files:, dirs:, no_existence: }
+  def convert_setid_str(mode_str)
+    mode_str.gsub(/x$/, 's').gsub(/-$/, 'S')
   end
 end

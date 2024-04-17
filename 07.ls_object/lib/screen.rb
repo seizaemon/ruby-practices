@@ -12,68 +12,73 @@ class Screen
     return '' if @file_stats.empty?
 
     max_row_num = calc_max_row_num(@console_width)
-    longest_name_length = filename_max_length
+    max_filename_width = pick_max_width_filename
 
-    # 各行の先頭列のindexを決め、各行の内容を決定していく
-    (0..max_row_num - 1).map do |row_index|
-      column_indexes = (row_index..@file_stats.length - 1).step(max_row_num).to_a
-      fmt_in_row = (["%-#{longest_name_length}s"] * column_indexes.length).join(' ')
-      format fmt_in_row, *(column_indexes.map { |i| @file_stats[i].name })
-    end.join("\n")
+    # 各行の先頭列のindexから各行の内容を決定していく
+    (0..max_row_num - 1).each do |row_index|
+      start_col_index = row_index
+      end_col_index = @file_stats.length - 1
+      column_indexes_in_row = (start_col_index..end_col_index).step(max_row_num).to_a
+
+      output_fmt_in_row = (["%-#{max_filename_width}s"] * column_indexes_in_row.length).join(' ')
+      output_columns = column_indexes_in_row.map { |i| @file_stats[i].name }
+
+      puts(format output_fmt_in_row, *output_columns)
+    end
   end
 
   def out_in_detail
-    @file_stats.map do |file_stat|
-      output = []
-      output << format('%<type>1s%<permission>8s ', type: file_stat.type, permission: file_stat.permission)
-      output << format("%<nlink> #{nlink_max_length}s", nlink: file_stat.nlink)
-      output << format("%<owner> #{owner_max_length}s ", owner: file_stat.owner)
-      output << format("%<group> #{group_max_length}s ", group: file_stat.group)
-      output << format("%<size> #{size_max_length}s", size: file_stat.str_size)
-      output << format("%<update_time> #{update_time_max_length}s", update_time: file_stat.update_time)
-      output << format("%<name>-#{filename_max_length}s", name: file_stat.name)
-      output.join(' ')
-    end.join("\n")
+    @file_stats.each do |stat|
+      output_parts = []
+      output_parts << format('%1s%8s ', stat.type, stat.permission)
+      output_parts << format("% #{pick_max_width_nlink}s", stat.nlink)
+      output_parts << format("% #{pick_max_width_owner}s ", stat.owner)
+      output_parts << format("% #{pick_max_width_group}s ", stat.group)
+      output_parts << format("% #{pick_max_with_size}s", stat.str_size)
+      output_parts << format("% #{pick_max_width_update_time}s", stat.update_time)
+      output_parts << format("%-#{pick_max_width_filename}s", stat.name)
+
+      puts output_parts.join(' ')
+    end
   end
 
   private
 
   def calc_column_num(width)
-    column = 1
-    max_char_length = filename_max_length
-    column += 1 until ((max_char_length + 1) * column + max_char_length) > width
-    column
+    max_length = pick_max_width_filename
+    # コンソール幅と最長のファイル名から、ファイルの名前を全て並べられるファイルの最大個数を計算
+    ((width - max_length) / (max_length + 1)).to_f
   end
 
   def calc_max_row_num(width)
     (@file_stats.length.to_f / calc_column_num(width)).ceil
   end
 
-  def nlink_max_length
-    max_str_length @file_stats.map(&:nlink)
+  def pick_max_width_nlink
+    pick_max_str_len @file_stats.map(&:nlink)
   end
 
-  def owner_max_length
-    max_str_length @file_stats.map(&:owner)
+  def pick_max_width_owner
+    pick_max_str_len @file_stats.map(&:owner)
   end
 
-  def group_max_length
-    max_str_length @file_stats.map(&:group)
+  def pick_max_width_group
+    pick_max_str_len @file_stats.map(&:group)
   end
 
-  def size_max_length
-    max_str_length @file_stats.map(&:size)
+  def pick_max_with_size
+    pick_max_str_len @file_stats.map(&:size)
   end
 
-  def update_time_max_length
-    max_str_length @file_stats.map(&:update_time)
+  def pick_max_width_update_time
+    pick_max_str_len @file_stats.map(&:update_time)
   end
 
-  def filename_max_length
-    max_str_length @file_stats.map(&:name)
+  def pick_max_width_filename
+    pick_max_str_len @file_stats.map(&:name)
   end
 
-  def max_str_length(list)
-    list.map { |e| e.to_s.length }.max
+  def pick_max_str_len(string_list)
+    string_list.map { |e| e.to_s.length }.max
   end
 end
