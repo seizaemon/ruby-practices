@@ -69,7 +69,7 @@ class LsFileStatTest < Minitest::Test
     with_work_dir do
       system 'touch test_file1 ; dd if=/dev/zero of=test_file1 bs=128 count=1'
       stat = LsFileStat.new('test_file1')
-      assert_equal '128', stat.str_size
+      assert_equal '128', stat.size_in_ls_format
     end
   end
 
@@ -78,8 +78,8 @@ class LsFileStatTest < Minitest::Test
     with_work_dir do
       char_dev_stat = LsFileStat.new('/dev/null')
       blk_dev_stat = LsFileStat.new('/dev/disk0')
-      assert_equal '0x1000000', blk_dev_stat.str_size
-      assert_equal '0x3000002', char_dev_stat.str_size
+      assert_equal '0x1000000', blk_dev_stat.size_in_ls_format
+      assert_equal '0x3000002', char_dev_stat.size_in_ls_format
     end
   end
 

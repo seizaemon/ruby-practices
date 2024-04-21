@@ -37,9 +37,9 @@ def print_file_stats(file_stats, long_format)
 
   screen = Screen.new(file_stats)
   if long_format
-    print screen.rows_out_in_detail
+    print screen.out_in_detail
   else
-    print screen.rows_out
+    print screen.out
   end
 end
 
@@ -53,9 +53,9 @@ def print_dir_stats(dir_stat, long_format, reverse, all_visible)
     if long_format
       puts "total #{stats.map(&:blocks).sum}"
       # ブロック単位になるputsの改行が効かない
-      print screen.rows_out_in_detail
+      print screen.out_in_detail
     else
-      print screen.rows_out
+      print screen.out
     end
   end
 end

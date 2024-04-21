@@ -8,9 +8,7 @@ class Screen
     _, @console_width = IO.console_size
   end
 
-  # TODO: もうちょっと名前をなんとかしたい　もしくは出力をなんとかしたい
-  # blockで出力するニュアンス blockで出力しないほうがいいのか？
-  def rows_out
+  def out
     return '' if @file_stats.empty?
 
     max_row_num = calc_max_row_num(@console_width)
@@ -33,7 +31,7 @@ class Screen
     "#{result}\n"
   end
 
-  def rows_out_in_detail
+  def out_in_detail
     rows = []
 
     @file_stats.each do |stat|

@@ -3,6 +3,10 @@
 require 'minitest/autorun'
 require_relative '../test/work_dir'
 
+# TODO: 網羅できていないテストがありそう
+# TODO: 必要十分な程度に画面写真をとる
+# TODO: bulk_createのテスト追加
+
 class LsTest < Minitest::Test
   include WorkDir
 

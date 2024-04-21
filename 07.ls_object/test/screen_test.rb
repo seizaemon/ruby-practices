@@ -37,7 +37,7 @@ class ScreenTest < Minitest::Test
       r, w = IO.pipe
       stats = LsFileStat.bulk_create create_test_files(3)
       screen = Screen.new stats
-      w.puts screen.rows_out
+      w.puts screen.out
       w.close
 
       assert_equal expected, r.gets('')
@@ -52,7 +52,7 @@ class ScreenTest < Minitest::Test
       r, w = IO.pipe
       stats = LsFileStat.bulk_create create_test_files(file_num)
       screen = Screen.new stats
-      w.puts screen.rows_out
+      w.puts screen.out
       w.close
 
       expected = <<~TEXT
@@ -70,7 +70,7 @@ class ScreenTest < Minitest::Test
       r, w = IO.pipe
       stats = LsFileStat.bulk_create []
       screen = Screen.new stats
-      w.puts screen.rows_out
+      w.puts screen.out
       w.close
       assert_nil r.gets('')
     end
@@ -96,15 +96,15 @@ class ScreenInDetailTest < Minitest::Test
         -r---w---x  1 #{@user_name}  #{@group_name}    0  #{date_str} test_file2     
         -rwxrwxrwx  1 #{@user_name}  #{@group_name}    0  #{date_str} test_long_file1
       TEXT
-
       # rubocop:enable Layout/TrailingWhitespace
+
       system 'touch test_file1 ; chmod 754 test_file1; dd if=/dev/zero of=test_file1 bs=100 count=1'
       system 'touch test_file2 ; chmod 421 test_file2'
       system 'touch test_long_file1 ; chmod 777 test_long_file1'
       stats = LsFileStat.bulk_create %w[test_file2 test_file1 test_long_file1]
       screen = Screen.new(stats)
       r, w = IO.pipe
-      w.puts screen.rows_out_in_detail
+      w.puts screen.out_in_detail
       w.close
       assert_equal expected, r.gets('')
     end

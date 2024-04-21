@@ -32,40 +32,33 @@ class LsFileStat
     @path
   end
 
-  # Ok
   def nlink
     @stat.nlink
   end
 
-  # ok
   def size_in_ls_format
     return "0x#{@stat.rdev_major}00000#{@stat.rdev_minor}" if @stat.blockdev? || @stat.chardev?
 
     @stat.size.to_s
   end
 
-  # ok
   def permission
     mode_octet = @stat.mode.to_s(8)[-3..].chars
     convert_mode_str mode_octet
   end
 
-  # ok
   def owner
     Etc.getpwuid(@stat.uid).name
   end
 
-  # OK
   def group
     Etc.getgrgid(@stat.gid).name
   end
 
-  # oK
   def atime_in_ls_format
     @stat.atime.strftime('%_m %_d %H:%M')
   end
 
-  # ok
   def type
     return 'l' if @stat.symlink?
     return '-' if @stat.file?
@@ -74,17 +67,14 @@ class LsFileStat
     @stat.ftype[0].downcase
   end
 
-  # File::Statそのものなのでテスト略
   def file?
     @stat.file?
   end
 
-  # File::Statそのものなのでテスト略
   def directory?
     @stat.directory?
   end
 
-  # File::Statそのものなのでテスト略
   def blocks
     @stat.blocks
   end
@@ -113,9 +103,9 @@ class LsFileStat
   private
 
   def readlink
-    # Pathnameの登場が唐突
-    base_path = Pathname.new File.readlink(@path)
-    base_path.relative_path_from(Pathname.new('.')).to_s
+    target_pathname = Pathname.new File.readlink(@path)
+    current_pathname = Pathname.new '.'
+    target_pathname.relative_path_from(current_pathname).to_s
   end
 
   def convert_mode_str(mode_octet)
