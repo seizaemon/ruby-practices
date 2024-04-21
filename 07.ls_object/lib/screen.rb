@@ -8,11 +8,15 @@ class Screen
     _, @console_width = IO.console_size
   end
 
-  def out
+  # TODO: もうちょっと名前をなんとかしたい　もしくは出力をなんとかしたい
+  # blockで出力するニュアンス blockで出力しないほうがいいのか？
+  def rows_out
     return '' if @file_stats.empty?
 
     max_row_num = calc_max_row_num(@console_width)
     max_filename_width = pick_max_width_filename
+
+    rows = []
 
     # 各行の先頭列のindexから各行の内容を決定していく
     (0..max_row_num - 1).each do |row_index|
@@ -23,23 +27,29 @@ class Screen
       output_fmt_in_row = (["%-#{max_filename_width}s"] * column_indexes_in_row.length).join(' ')
       output_columns = column_indexes_in_row.map { |i| @file_stats[i].name }
 
-      puts(format output_fmt_in_row, *output_columns)
+      rows << format(output_fmt_in_row, *output_columns)
     end
+    result = rows.join("\n")
+    "#{result}\n"
   end
 
-  def out_in_detail
+  def rows_out_in_detail
+    rows = []
+
     @file_stats.each do |stat|
       output_parts = []
-      output_parts << format('%1s%8s ', stat.type, stat.permission)
+      output_parts << format('%<type>1s%<permission>8s ', type: stat.type, permission: stat.permission)
       output_parts << format("% #{pick_max_width_nlink}s", stat.nlink)
       output_parts << format("% #{pick_max_width_owner}s ", stat.owner)
       output_parts << format("% #{pick_max_width_group}s ", stat.group)
-      output_parts << format("% #{pick_max_with_size}s", stat.str_size)
-      output_parts << format("% #{pick_max_width_update_time}s", stat.update_time)
+      output_parts << format("% #{pick_max_with_size}s", stat.size_in_ls_format)
+      output_parts << format("% #{pick_max_width_atime}s", stat.atime_in_ls_format)
       output_parts << format("%-#{pick_max_width_filename}s", stat.name)
 
-      puts output_parts.join(' ')
+      rows << output_parts.join(' ')
     end
+    result = rows.join("\n")
+    "#{result}\n"
   end
 
   private
@@ -67,11 +77,12 @@ class Screen
   end
 
   def pick_max_with_size
-    pick_max_str_len @file_stats.map(&:size)
+    pick_max_str_len @file_stats.map(&:size_in_ls_format)
   end
 
-  def pick_max_width_update_time
-    pick_max_str_len @file_stats.map(&:update_time)
+  # 重複。もうちょっとやりようがある？
+  def pick_max_width_atime
+    pick_max_str_len @file_stats.map(&:atime_in_ls_format)
   end
 
   def pick_max_width_filename

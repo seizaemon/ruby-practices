@@ -16,23 +16,19 @@ def main
   opt.on('-l') { long_format = true }
 
   paths = opt.parse(ARGV)
-  paths = ['.'] if argv.empty?
+  paths = ['.'] if paths.empty?
 
   stats = LsFileStat.bulk_create(paths, reverse:)
-  file_stats = stats.map(&:file?)
-  dir_stats = stats.map(&:directory?)
+  file_stats = stats.filter(&:file?)
+  dir_stats = stats.filter(&:directory?)
 
   print_file_stats(file_stats, long_format)
 
-  unless stats[:dirs].empty?
-    puts unless stats[:files].empty?
-    dir_stats.each do |stat|
-      # エラー時の表示制御は省略しました
-      if not file_stats.empty? && dir_stats.count == 1
-        puts "#{stat.name}:"
-      end
-      print_dir_stats(stat, long_format, reverse, all_visible)
-    end
+  puts unless file_stats.empty?
+  dir_stats.each do |stat|
+    # エラー時の表示制御は省略
+    puts "#{stat.name}:" if !file_stats.empty? && dir_stats.count == 1
+    print_dir_stats(stat, long_format, reverse, all_visible)
   end
 end
 
@@ -41,9 +37,9 @@ def print_file_stats(file_stats, long_format)
 
   screen = Screen.new(file_stats)
   if long_format
-    puts(screen.out_in_detail)
+    print screen.rows_out_in_detail
   else
-    puts(screen.out)
+    print screen.rows_out
   end
 end
 
@@ -55,12 +51,11 @@ def print_dir_stats(dir_stat, long_format, reverse, all_visible)
     stats = LsFileStat.bulk_create(file_names, reverse:)
     screen = Screen.new(stats)
     if long_format
-      puts <<~EOS
-        total #{stats.sum(&:blocks)}
-        #{screen.out_in_detail}"
-      EOS
+      puts "total #{stats.map(&:blocks).sum}"
+      # ブロック単位になるputsの改行が効かない
+      print screen.rows_out_in_detail
     else
-      puts screen.out
+      print screen.rows_out
     end
   end
 end

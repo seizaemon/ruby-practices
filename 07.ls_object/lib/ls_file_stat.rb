@@ -16,51 +16,80 @@ class LsFileStat
     '3' => "#{DISABLE}#{WRITE}#{EXEC}",
     '4' => "#{READ}#{DISABLE}#{DISABLE}",
     '5' => "#{READ}#{DISABLE}#{EXEC}",
-    '6' => "#{READ}#{WRITE}#{NULL}",
+    '6' => "#{READ}#{WRITE}#{DISABLE}",
     '7' => "#{READ}#{WRITE}#{EXEC}"
   }.freeze
 
   def initialize(file_path)
-    @stat = File::Stat.new file_path
+    @stat = File.lstat file_path
+    @path = file_path
   end
 
+  # ok
   def name
-    return "#{@stat.name} -> #{readlink}" if @stat.symlink?
+    return "#{@path} -> #{readlink}" if @stat.symlink?
 
-    @stat.name
+    @path
   end
 
-  def str_size
+  # Ok
+  def nlink
+    @stat.nlink
+  end
+
+  # ok
+  def size_in_ls_format
     return "0x#{@stat.rdev_major}00000#{@stat.rdev_minor}" if @stat.blockdev? || @stat.chardev?
 
-    size.to_s
+    @stat.size.to_s
   end
 
+  # ok
   def permission
-    mode_octet = @stat.mode.to_s(8)[-4..].chars
+    mode_octet = @stat.mode.to_s(8)[-3..].chars
     convert_mode_str mode_octet
   end
 
+  # ok
   def owner
-    Etc.getpwuid(uid).name
+    Etc.getpwuid(@stat.uid).name
   end
 
+  # OK
   def group
-    Etc.getgrgid(gid).name
+    Etc.getgrgid(@stat.gid).name
   end
 
-  def update_time
-    Time.parse(@stat.atime.to_s).strftime('%_m %_d %H:%M')
+  # oK
+  def atime_in_ls_format
+    @stat.atime.strftime('%_m %_d %H:%M')
   end
 
+  # ok
   def type
     return 'l' if @stat.symlink?
     return '-' if @stat.file?
     return 'p' if @stat.ftype == 'fifo'
 
-    @stat.ftype.downcase
+    @stat.ftype[0].downcase
   end
 
+  # File::Statそのものなのでテスト略
+  def file?
+    @stat.file?
+  end
+
+  # File::Statそのものなのでテスト略
+  def directory?
+    @stat.directory?
+  end
+
+  # File::Statそのものなのでテスト略
+  def blocks
+    @stat.blocks
+  end
+
+  # テストしてない？
   def self.bulk_create(paths, base: '', reverse: false)
     missing_paths = []
     stats = []
@@ -68,24 +97,25 @@ class LsFileStat
     paths_sorted = reverse ? paths.sort.reverse : paths.sort
 
     paths_sorted.each do |path|
-      stats << LsFileStat.new(File.join(base, file_name))
+      base_path = Pathname.new base
+      stats << LsFileStat.new(base_path.join(path).to_s)
     rescue Errno::ENOENT
-      missing << path
+      missing_paths << path
     end
 
     # エラー時の表示は省略しました
     # エラー表示だけはreverseフラグにかかわらず辞書順
     # missing_paths.each { |path| warn "ls: #{path}: No such file or directory" }
 
-    return stats
+    stats
   end
 
   private
 
   def readlink
     # Pathnameの登場が唐突
-    org_path = Pathname.new(File.readlink(@stat.name))
-    org_path.relative_path_from(Pathname.new('.')).to_s
+    base_path = Pathname.new File.readlink(@path)
+    base_path.relative_path_from(Pathname.new('.')).to_s
   end
 
   def convert_mode_str(mode_octet)

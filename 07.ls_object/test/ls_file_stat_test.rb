@@ -12,13 +12,13 @@ class LsFileStatTest < Minitest::Test
   include WorkDir
   include CreateTestFile
 
-  # update_dateはlsのフォーマットに従ってファイル最新更新日を返す
-  def test_update_time
+  # atimeはlsのフォーマットに従ってファイル最新更新日を返す
+  def test_atime
     with_work_dir do
       file_name, = filename_with_owner_and_group
       updated = Time.now.strftime('%_m %_d %H:%M')
-      file_entry = LsFileStat.new(file_name)
-      assert_equal updated, file_entry.update_time
+      stat = LsFileStat.new(file_name)
+      assert_equal updated, stat.atime_in_ls_format
     end
   end
 
@@ -26,8 +26,8 @@ class LsFileStatTest < Minitest::Test
   def test_owner
     with_work_dir do
       test_file_name, user, = filename_with_owner_and_group
-      file_entry = LsFileStat.new(test_file_name)
-      assert_equal user, file_entry.owner
+      stat = LsFileStat.new(test_file_name)
+      assert_equal user, stat.owner
     end
   end
 
@@ -35,8 +35,8 @@ class LsFileStatTest < Minitest::Test
   def test_group
     with_work_dir do
       test_file_name, _, group = filename_with_owner_and_group
-      file_entry = LsFileStat.new(test_file_name)
-      assert_equal group, file_entry.group
+      stat = LsFileStat.new(test_file_name)
+      assert_equal group, stat.group
     end
   end
 
@@ -45,13 +45,13 @@ class LsFileStatTest < Minitest::Test
     with_work_dir do
       # カレントディレクトリにあるファイルの場合
       test_file_name, = filename_with_owner_and_group
-      entry1 = LsFileStat.new(test_file_name)
-      assert_equal test_file_name, entry1.name
+      stat_current = LsFileStat.new test_file_name
+      assert_equal test_file_name, stat_current.name
 
       # カレントにないファイルの場合
       system 'mkdir test_dir ; touch test_dir/test_file3'
-      entry2 = LsFileStat.new('test_dir/test_file3')
-      assert_equal 'test_dir/test_file3', entry2.name
+      stat_not_current = LsFileStat.new('test_dir/test_file3')
+      assert_equal 'test_dir/test_file3', stat_not_current.name
     end
   end
 
@@ -59,36 +59,59 @@ class LsFileStatTest < Minitest::Test
   def test_name_with_link
     with_work_dir do
       system 'touch test_file ; ln -s test_file test_link'
-      file_entry = LsFileStat.new('test_link')
-      assert_equal 'test_link -> test_file', file_entry.name
+      stat = LsFileStat.new('test_link')
+      assert_equal 'test_link -> test_file', stat.name
     end
   end
+
+  # sizeはファイルサイズを返す
+  def test_str_size_with_normal_file
+    with_work_dir do
+      system 'touch test_file1 ; dd if=/dev/zero of=test_file1 bs=128 count=1'
+      stat = LsFileStat.new('test_file1')
+      assert_equal '128', stat.str_size
+    end
+  end
+
+  # block fileとcharacter fileの場合、sizeはmajor numberを返す
+  def test_str_size_with_special_file
+    with_work_dir do
+      char_dev_stat = LsFileStat.new('/dev/null')
+      blk_dev_stat = LsFileStat.new('/dev/disk0')
+      assert_equal '0x1000000', blk_dev_stat.str_size
+      assert_equal '0x3000002', char_dev_stat.str_size
+    end
+  end
+
+  # baseを指定した場合nameはファイル名のみが入る
+  def test_base_dir
+    with_work_dir do
+      system 'mkdir test_dir; touch test_dir/test_file'
+      stat = LsFileStat.new('test_dir/test_file')
+      assert_equal 'test_dir/test_file', stat.name
+    end
+  end
+
+  # nlinkはファイルリンク数を返す
+  def test_nlink
+    with_work_dir do
+      system 'mkdir test; touch test/test_file1'
+      stat = LsFileStat.new('test')
+      # ディレクトリ内のハードリンクの数は .と..とtest_file1で3つ
+      assert_equal 3, stat.nlink
+    end
+  end
+end
+
+class LsFileStatTypeTest
+  # typeはFile.lstat.type.downcase以外のものをテスト
 
   # typeはファイルが通常の場合 - を返す
   def test_type_with_normal_file
     with_work_dir do
       test_file_name, = filename_with_owner_and_group
-      file_entry = LsFileStat.new(test_file_name)
-      assert_equal '-', file_entry.type
-    end
-  end
-
-  # sizeはファイルサイズを返す
-  def test_size_with_normal_file
-    with_work_dir do
-      system 'touch test_file1 ; dd if=/dev/zero of=test_file1 bs=128 count=1'
-      file_entry = LsFileStat.new('test_file1')
-      assert_equal '128', file_entry.str_size
-    end
-  end
-
-  # block fileとcharacter fileの場合、sizeはmajor numberを返す
-  def test_size_with_special_file
-    with_work_dir do
-      character_entry = LsFileStat.new('/dev/null')
-      block_entry = LsFileStat.new('/dev/disk0')
-      assert_equal '0x1000000', block_entry.str_size
-      assert_equal '0x3000002', character_entry.str_size
+      stat = LsFileStat.new(test_file_name)
+      assert_equal '-', stat.type
     end
   end
 
@@ -96,23 +119,9 @@ class LsFileStatTest < Minitest::Test
   def test_type_with_link
     with_work_dir do
       system 'touch test_file ; ln -s test_file test_link'
-      file_entry = LsFileStat.new('test_link')
-      assert_equal 'l', file_entry.type
+      symlink_stat = LsFileStat.new 'test_link'
+      assert_equal 'l', symlink_stat.type
     end
-  end
-end
-
-class LsFileStatTypeTest
-  # typeはファイルがblock special fileの場合 b を返す
-  def test_type_with_block_device
-    file_entry = LsFileStat.new('/dev/disk0')
-    assert_equal 'b', file_entry.type
-  end
-
-  # typeはファイルがcharacter special fileの場合 c を返す
-  def test_type_with_character_device
-    file_entry = LsFileStat.new('/dev/null')
-    assert_equal 'c', file_entry.type
   end
 
   # typeはファイルがFIFOの場合 p を返す
@@ -121,35 +130,6 @@ class LsFileStatTypeTest
       system 'mkfifo test_fifo'
       file_entry = LsFileStat.new('test_fifo')
       assert_equal 'p', file_entry.type
-    end
-  end
-
-  # typeはファイルがsocketの場合 s を返す
-  def test_type_with_socket
-    with_work_dir do
-      s = UNIXServer.new('sock')
-      file_entry = LsFileStat.new('sock')
-      assert_equal 's', file_entry.type
-      s.close
-    end
-  end
-
-  # nlinkはファイルリンク数を返す
-  def test_nlink
-    with_work_dir do
-      system 'mkdir test; touch test/test_file1'
-      file_entry = LsFileStat.new('test')
-      # ディレクトリ内のハードリンクの数は .と..とtest_file1で3つ
-      assert_equal 3, file_entry.nlink
-    end
-  end
-
-  # baseを指定した場合nameはファイル名のみが入る
-  def test_base_dir
-    with_work_dir do
-      system 'mkdir test_dir; touch test_dir/test_file'
-      file_entry = LsFileStat.new('test_dir/test_file')
-      assert_equal 'test_file', file_entry.name
     end
   end
 end
@@ -162,11 +142,11 @@ class LsFileStatPermissionTest < Minitest::Test
   def test_permission
     with_work_dir do
       create_various_type_of_file
-      test_entries = %w[test_file test_file2 test_file3].map do |file|
+      normal_file_stats = %w[test_file test_file2 test_file3].map do |file|
         LsFileStat.new(file)
       end
       %w[rwxrw-r-x r---w---x ---------].each_with_index do |mode_str, i|
-        assert_equal mode_str, test_entries[i].permission
+        assert_equal mode_str, normal_file_stats[i].permission
       end
     end
   end
@@ -175,11 +155,11 @@ class LsFileStatPermissionTest < Minitest::Test
   def test_permission_with_setuid
     with_work_dir do
       create_various_type_of_file
-      file_entry1 = LsFileStat.new('test_file4')
-      file_entry2 = LsFileStat.new('test_file5')
+      non_setuid_stat = LsFileStat.new('test_file4')
+      setuid_stat = LsFileStat.new('test_file5')
 
-      assert_equal 'rwsrwxrwx', file_entry1.permission
-      assert_equal 'rwSrw-rw-', file_entry2.permission
+      assert_equal 'rwsrwxrwx', non_setuid_stat.permission
+      assert_equal 'rwSrw-rw-', setuid_stat.permission
     end
   end
 
@@ -187,11 +167,11 @@ class LsFileStatPermissionTest < Minitest::Test
   def test_permission_with_setgid
     with_work_dir do
       create_various_type_of_file
-      file_entry1 = LsFileStat.new('test_file6')
-      file_entry2 = LsFileStat.new('test_file7')
+      non_setgid_stat = LsFileStat.new('test_file6')
+      setgid_stat = LsFileStat.new('test_file7')
 
-      assert_equal 'rwxrwsrwx', file_entry1.permission
-      assert_equal 'rw-rwSrw-', file_entry2.permission
+      assert_equal 'rwxrwsrwx', non_setgid_stat.permission
+      assert_equal 'rw-rwSrw-', setgid_stat.permission
     end
   end
 
@@ -200,11 +180,11 @@ class LsFileStatPermissionTest < Minitest::Test
     with_work_dir do
       system 'mkdir test_dir1; chmod 1777 test_dir1'
       system 'mkdir test_dir2; chmod 1666 test_dir2'
-      file_entry1 = LsFileStat.new('test_dir1')
-      file_entry2 = LsFileStat.new('test_dir2')
+      non_sticky_stat = LsFileStat.new('test_dir1')
+      sticky_stat = LsFileStat.new('test_dir2')
 
-      assert_equal 'rwxrwxrwt', file_entry1.permission
-      assert_equal 'rw-rw-rwT', file_entry2.permission
+      assert_equal 'rwxrwxrwt', non_sticky_stat.permission
+      assert_equal 'rw-rw-rwT', sticky_stat.permission
     end
   end
 end

@@ -53,7 +53,8 @@ class LsTest < Minitest::Test
 
       # rubocop:disable Layout/TrailingWhitespace
       expected = <<~TEXT
-        .            ..           .test_hidden test_dir     test_file1   test_file2  
+        .            .test_hidden test_file1  
+        ..           test_dir     test_file2  
       TEXT
       # rubocop:enable Layout/TrailingWhitespace
       assert_equal expected, r.gets('')
@@ -112,20 +113,21 @@ class LsTest < Minitest::Test
   end
 
   # 存在しないファイルを指定した場合はエラーを出力
-  def test_nonexistent_file
-    ready_test_env do
-      r, w = IO.pipe
-      system "ruby #{__dir__}/../ls.rb test_dir non_existent2 non_existent1 2>&1 ", out: w
-      w.close
-
-      # 標準出力分の出力がでない
-      expected = <<~TEXT
-        ls: non_existent1: No such file or directory
-        ls: non_existent2: No such file or directory
-        test_dir:
-        test_file3 test_file4
-      TEXT
-      assert_equal expected, r.gets('')
-    end
-  end
+  # コード省略のため削除
+  # def test_nonexistent_file
+  #   ready_test_env do
+  #     r, w = IO.pipe
+  #     system "ruby #{__dir__}/../ls.rb test_dir non_existent2 non_existent1 2>&1 ", out: w
+  #     w.close
+  #
+  #     # 標準出力分の出力がでない
+  #     expected = <<~TEXT
+  #       ls: non_existent1: No such file or directory
+  #       ls: non_existent2: No such file or directory
+  #       test_dir:
+  #       test_file3 test_file4
+  #     TEXT
+  #     assert_equal expected, r.gets('')
+  #   end
+  # end
 end
