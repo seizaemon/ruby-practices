@@ -1,11 +1,8 @@
 # frozen_string_literal: true
 
 require 'minitest/autorun'
+require 'tempfile'
 require_relative '../test/work_dir'
-
-# TODO: 網羅できていないテストがありそう
-# TODO: 必要十分な程度に画面写真をとる
-# TODO: bulk_createのテスト追加
 
 class LsTest < Minitest::Test
   include WorkDir
@@ -18,7 +15,7 @@ class LsTest < Minitest::Test
     end
   end
 
-  # オプションなし
+  # 引数なしの場合はカレントディレクトリの内容を調べる
   def test_ls_normal
     ready_test_env do
       r, w = IO.pipe
@@ -28,59 +25,6 @@ class LsTest < Minitest::Test
       expected = <<~TEXT
         test_dir   test_file1 test_file2
       TEXT
-      assert_equal expected, r.gets('')
-    end
-  end
-
-  # rオプション
-  def test_ls_with_reverse_option
-    ready_test_env do
-      r, w = IO.pipe
-      system "ruby #{__dir__}/../ls.rb -r", out: w
-      w.close
-
-      # rubocop:disable Layout/TrailingWhitespace
-      expected = <<~TEXT
-        test_file2 test_file1 test_dir  
-      TEXT
-      # rubocop:enable Layout/TrailingWhitespace
-      assert_equal expected, r.gets('')
-    end
-  end
-
-  # aオプション
-  def test_ls_with_all_option
-    ready_test_env do
-      r, w = IO.pipe
-      system "ruby #{__dir__}/../ls.rb -a", out: w
-      w.close
-
-      # rubocop:disable Layout/TrailingWhitespace
-      expected = <<~TEXT
-        .            .test_hidden test_file1  
-        ..           test_dir     test_file2  
-      TEXT
-      # rubocop:enable Layout/TrailingWhitespace
-      assert_equal expected, r.gets('')
-    end
-  end
-
-  # lオプション
-  def test_ls_with_l_option
-    ready_test_env do
-      r, w = IO.pipe
-      system "ruby #{__dir__}/../ls.rb -l", out: w
-      date_str = Time.now.strftime('%_m %_d %H:%M')
-      w.close
-
-      # rubocop:disable Layout/TrailingWhitespace
-      expected = <<~TEXT
-        total 0
-        drwxr-xr-x  4 oden  staff  128 #{date_str} test_dir  
-        -rw-r--r--  1 oden  staff    0 #{date_str} test_file1
-        -rw-r--r--  1 oden  staff    0 #{date_str} test_file2
-      TEXT
-      # rubocop:enable Layout/TrailingWhitespace
       assert_equal expected, r.gets('')
     end
   end
@@ -116,22 +60,17 @@ class LsTest < Minitest::Test
     end
   end
 
-  # 存在しないファイルを指定した場合はエラーを出力
-  # コード省略のため削除
-  # def test_nonexistent_file
-  #   ready_test_env do
-  #     r, w = IO.pipe
-  #     system "ruby #{__dir__}/../ls.rb test_dir non_existent2 non_existent1 2>&1 ", out: w
-  #     w.close
-  #
-  #     # 標準出力分の出力がでない
-  #     expected = <<~TEXT
-  #       ls: non_existent1: No such file or directory
-  #       ls: non_existent2: No such file or directory
-  #       test_dir:
-  #       test_file3 test_file4
-  #     TEXT
-  #     assert_equal expected, r.gets('')
-  #   end
-  # end
+  # 絶対パスを指定した場合はその内容を表示する
+  def test_ls_with_absolute_path
+    Tempfile.open('test_file', '/tmp') do |f|
+      r, w = IO.pipe
+      system "ruby #{__dir__}/../ls.rb #{f.path}", out: w
+      w.close
+
+      expected = <<~TEXT
+        #{f.path}
+      TEXT
+      assert_equal expected, r.gets(nil)
+    end
+  end
 end

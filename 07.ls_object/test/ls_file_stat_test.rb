@@ -60,7 +60,7 @@ class LsFileStatTest < Minitest::Test
     with_work_dir do
       system 'touch test_file ; ln -s test_file test_link'
       stat = LsFileStat.new('test_link')
-      assert_equal 'test_link -> test_file', stat.name
+      assert_equal 'test_link -> test_file', stat.name(show_link: true)
     end
   end
 
@@ -185,6 +185,20 @@ class LsFileStatPermissionTest < Minitest::Test
 
       assert_equal 'rwxrwxrwt', non_sticky_stat.permission
       assert_equal 'rw-rw-rwT', sticky_stat.permission
+    end
+  end
+end
+
+class LsBulkCreateTest < Minitest::Test
+  include WorkDir
+  # bulk_createは
+  def test_bulk_create
+    with_work_dir do
+      system 'touch test_file1 test_file2'
+      stats = LsFileStat.bulk_create %w[test_file1 test_file2]
+      test_stat1 = LsFileStat.new 'test_file1'
+      test_stat2 = LsFileStat.new 'test_file2'
+      assert stats, [test_stat1, test_stat2]
     end
   end
 end

@@ -24,12 +24,11 @@ def main
 
   print_file_stats(file_stats, long_format)
 
-  puts unless file_stats.empty?
-  dir_stats.each do |stat|
-    # エラー時の表示制御は省略
-    puts "#{stat.name}:" if !file_stats.empty? && dir_stats.count == 1
-    print_dir_stats(stat, long_format, reverse, all_visible)
-  end
+  return if dir_stats.empty?
+
+  label = true if dir_stats.length > 1 && !file_stats.empty?
+  puts
+  print_dir_stats dir_stats, long_format, reverse, all_visible, label:
 end
 
 def print_file_stats(file_stats, long_format)
@@ -37,25 +36,42 @@ def print_file_stats(file_stats, long_format)
 
   screen = Screen.new(file_stats)
   if long_format
-    print screen.out_in_detail
+    puts screen.out_in_detail
   else
-    print screen.out
+    puts screen.out
   end
 end
 
-def print_dir_stats(dir_stat, long_format, reverse, all_visible)
+def print_dir_stats(dir_stats, *options, label: false)
+  output = dir_stats.map do |dir_stat|
+    if label
+      format_dir_stat dir_stat, *options
+    else
+      <<~TEXT
+        #{dir_stat.name}:
+        #{format_dir_stat(dir_stat, *options)}
+      TEXT
+    end
+  end
+  puts output.join("\n")
+end
+
+def format_dir_stat(dir_stat, long_format, reverse, all_visible)
   file_names = Dir.glob('*', (all_visible ? File::FNM_DOTMATCH : 0), base: dir_stat.name)
   file_names << '..' if all_visible
+
+  return if file_names.empty?
 
   Dir.chdir(dir_stat.name) do
     stats = LsFileStat.bulk_create(file_names, reverse:)
     screen = Screen.new(stats)
     if long_format
-      puts "total #{stats.map(&:blocks).sum}"
-      # ブロック単位になるputsの改行が効かない
-      print screen.out_in_detail
+      <<~TEXT
+        total #{stats.map(&:blocks).sum}
+        #{screen.out_in_detail}
+      TEXT
     else
-      print screen.out
+      screen.out
     end
   end
 end

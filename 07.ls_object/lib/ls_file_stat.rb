@@ -26,8 +26,8 @@ class LsFileStat
   end
 
   # ok
-  def name
-    return "#{@path} -> #{readlink}" if @stat.symlink?
+  def name(show_link: false)
+    return "#{@path} -> #{readlink}" if @stat.symlink? && show_link
 
     @path
   end
@@ -87,16 +87,18 @@ class LsFileStat
     paths_sorted = reverse ? paths.sort.reverse : paths.sort
 
     paths_sorted.each do |path|
-      base_path = Pathname.new base
-      stats << LsFileStat.new(base_path.join(path).to_s)
+      target_path = Pathname.new path
+      if target_path.absolute?
+        stats << LsFileStat.new(path)
+      else
+        base_path = Pathname.new base
+        stats << LsFileStat.new(base_path.join(path).to_s)
+      end
     rescue Errno::ENOENT
       missing_paths << path
     end
 
-    # エラー時の表示は省略しました
-    # エラー表示だけはreverseフラグにかかわらず辞書順
-    # missing_paths.each { |path| warn "ls: #{path}: No such file or directory" }
-
+    # エラー時の表示は省略
     stats
   end
 

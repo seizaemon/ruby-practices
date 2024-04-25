@@ -27,8 +27,7 @@ class Screen
 
       rows << format(output_fmt_in_row, *output_columns)
     end
-    result = rows.join("\n")
-    "#{result}\n"
+    rows.join("\n")
   end
 
   def out_in_detail
@@ -42,12 +41,11 @@ class Screen
       output_parts << format("% #{pick_max_width_group}s ", stat.group)
       output_parts << format("% #{pick_max_with_size}s", stat.size_in_ls_format)
       output_parts << format("% #{pick_max_width_atime}s", stat.atime_in_ls_format)
-      output_parts << format("%-#{pick_max_width_filename}s", stat.name)
+      output_parts << format("%-#{pick_max_width_filename}s", stat.name(show_link: true))
 
       rows << output_parts.join(' ')
     end
-    result = rows.join("\n")
-    "#{result}\n"
+    rows.join("\n")
   end
 
   private
