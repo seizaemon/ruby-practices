@@ -45,18 +45,18 @@ end
 def print_dir_stats(dir_stats, *options, label: false)
   output = dir_stats.map do |dir_stat|
     if label
-      format_dir_stat dir_stat, *options
+      show_dir_stat dir_stat, *options
     else
       <<~TEXT
         #{dir_stat.name}:
-        #{format_dir_stat(dir_stat, *options)}
+        #{show_dir_stat(dir_stat, *options)}
       TEXT
     end
   end
   puts output.join("\n")
 end
 
-def format_dir_stat(dir_stat, long_format, reverse, all_visible)
+def show_dir_stat(dir_stat, long_format, reverse, all_visible)
   file_names = Dir.glob('*', (all_visible ? File::FNM_DOTMATCH : 0), base: dir_stat.name)
   file_names << '..' if all_visible
 

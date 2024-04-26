@@ -62,6 +62,8 @@ class ScreenTest < Minitest::Test
       TEXT
       assert_equal expected, r.gets('')
     end
+
+    # エラー時の表示テストは省略
   end
 
   # ディレクトリ内にfileがなにも無い場合は何も表示しない

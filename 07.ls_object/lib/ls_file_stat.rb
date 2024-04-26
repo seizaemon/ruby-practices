@@ -79,7 +79,6 @@ class LsFileStat
     @stat.blocks
   end
 
-  # テストしてない？
   def self.bulk_create(paths, base: '', reverse: false)
     missing_paths = []
     stats = []
@@ -98,7 +97,6 @@ class LsFileStat
       missing_paths << path
     end
 
-    # エラー時の表示は省略
     stats
   end
 

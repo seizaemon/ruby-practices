@@ -3,8 +3,8 @@
 require 'io/console/size'
 
 class Screen
-  def initialize(bulk_created_ls_file_stats)
-    @file_stats = bulk_created_ls_file_stats
+  def initialize(bulk_created_stats)
+    @file_stats = bulk_created_stats
     _, @console_width = IO.console_size
   end
 
@@ -76,7 +76,6 @@ class Screen
     pick_max_str_len @file_stats.map(&:size_in_ls_format)
   end
 
-  # 重複。もうちょっとやりようがある？
   def pick_max_width_atime
     pick_max_str_len @file_stats.map(&:atime_in_ls_format)
   end
