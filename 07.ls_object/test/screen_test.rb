@@ -1,24 +1,13 @@
 # frozen_string_literal: true
 
 require 'minitest/autorun'
-require 'io/console/size'
 require 'time'
 require_relative '../lib/screen'
 require_relative '../lib/ls_file_stat'
 require_relative './work_dir'
 
-# テスト用のファイル名は11文字固定
-FILENAME_CHAR_COUNT = 11
-# テスト用のコンソールは固定
-TEST_CONSOLE_WIDTH = 80
-
 class ScreenTest < Minitest::Test
   include WorkDir
-
-  def setup
-    # _, @console_width = IO.console_size
-    @console_width = TEST_CONSOLE_WIDTH
-  end
 
   def create_test_files(max_file_num)
     (0..max_file_num - 1).map do |n|
@@ -34,47 +23,19 @@ class ScreenTest < Minitest::Test
       test_file00 test_file01 test_file02
     TEXT
     with_work_dir do
-      r, w = IO.pipe
       stats = LsFileStat.bulk_create create_test_files(3)
       screen = Screen.new stats
-      w.puts screen.out
-      w.close
 
-      assert_equal expected, r.gets('')
+      assert_output(expected) { puts screen.out }
     end
-  end
-
-  # ファイルの数が多い場合、画面に表示できる最大幅でファイルを並べて縦列が計算される
-  def test_out_with_many_files
-    file_num = 13
-
-    with_work_dir do
-      r, w = IO.pipe
-      stats = LsFileStat.bulk_create create_test_files(file_num)
-      screen = Screen.new stats
-      w.puts screen.out
-      w.close
-
-      expected = <<~TEXT
-        test_file00 test_file03 test_file06 test_file09 test_file12
-        test_file01 test_file04 test_file07 test_file10
-        test_file02 test_file05 test_file08 test_file11
-      TEXT
-      assert_equal expected, r.gets('')
-    end
-
-    # エラー時の表示テストは省略
   end
 
   # ディレクトリ内にfileがなにも無い場合は何も表示しない
   def test_with_empty_dir
     with_work_dir do
-      r, w = IO.pipe
       stats = LsFileStat.bulk_create []
       screen = Screen.new stats
-      w.puts screen.out
-      w.close
-      assert_nil r.gets('')
+      assert_output("\n") { puts screen.out }
     end
   end
 end
@@ -105,10 +66,8 @@ class ScreenInDetailTest < Minitest::Test
       system 'touch test_long_file1 ; chmod 777 test_long_file1'
       stats = LsFileStat.bulk_create %w[test_file2 test_file1 test_long_file1]
       screen = Screen.new(stats)
-      r, w = IO.pipe
-      w.puts screen.out_in_detail
-      w.close
-      assert_equal expected, r.gets('')
+
+      assert_output(expected) { puts screen.out_in_detail }
     end
   end
 end

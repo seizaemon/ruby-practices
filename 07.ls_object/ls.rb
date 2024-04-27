@@ -26,9 +26,9 @@ def main
 
   return if dir_stats.empty?
 
-  label = true if dir_stats.length > 1 && !file_stats.empty?
-  puts
-  print_dir_stats dir_stats, long_format, reverse, all_visible, label:
+  label = !file_stats.empty? ? true : false
+  separator = !file_stats.empty? ? true : false
+  print_dir_stats dir_stats, long_format, reverse, all_visible, label:, separator:
 end
 
 def print_file_stats(file_stats, long_format)
@@ -42,18 +42,19 @@ def print_file_stats(file_stats, long_format)
   end
 end
 
-def print_dir_stats(dir_stats, *options, label: false)
-  output = dir_stats.map do |dir_stat|
-    if label
-      show_dir_stat dir_stat, *options
-    else
-      <<~TEXT
-        #{dir_stat.name}:
-        #{show_dir_stat(dir_stat, *options)}
-      TEXT
-    end
-  end
-  puts output.join("\n")
+def print_dir_stats(dir_stats, *options, label: false, separator: false)
+  puts if separator
+  out = if label
+          dir_stats.map do |stat|
+            <<~TEXT
+              #{stat.name}:
+              #{show_dir_stat(stat, *options)}
+            TEXT
+          end
+        else
+          dir_stats.map { |stat| show_dir_stat stat, *options }
+        end
+  puts out.join("\n")
 end
 
 def show_dir_stat(dir_stat, long_format, reverse, all_visible)

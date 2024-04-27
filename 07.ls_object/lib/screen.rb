@@ -11,7 +11,7 @@ class Screen
   def out
     return '' if @file_stats.empty?
 
-    max_row_num = calc_max_row_num(@console_width)
+    max_row_num = calc_max_row_num
     max_filename_width = pick_max_width_filename
 
     rows = []
@@ -50,14 +50,17 @@ class Screen
 
   private
 
-  def calc_column_num(width)
+  def calc_column_num
     max_length = pick_max_width_filename
     # コンソール幅と最長のファイル名から、ファイルの名前を全て並べられるファイルの最大個数を計算
-    ((width - max_length) / (max_length + 1)).to_f
+    return 1 if max_length >= @console_width
+
+    # (max_length + 1) * column_num + max_length < console_width となるconlumn_numの最大値を求める
+    ((@console_width - max_length) / (max_length + 1)).to_f
   end
 
-  def calc_max_row_num(width)
-    (@file_stats.length.to_f / calc_column_num(width)).ceil
+  def calc_max_row_num
+    (@file_stats.length.to_f / calc_column_num).ceil
   end
 
   def pick_max_width_nlink
