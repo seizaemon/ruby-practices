@@ -54,14 +54,14 @@ class ScreenInDetailTest < Minitest::Test
 
       # rubocop:disable Layout/TrailingWhitespace
       expected = <<~TEXT
-        -rwxr-xr--  1 #{@user_name}  #{@group_name}  100  #{date_str} test_file1     
-        -r---w---x  1 #{@user_name}  #{@group_name}    0  #{date_str} test_file2     
-        -rwxrwxrwx  1 #{@user_name}  #{@group_name}    0  #{date_str} test_long_file1
+        -rwxr-xr--  1 #{@user_name}  staff     100  #{date_str} test_file1     
+        -r---w---x  1 #{@user_name}  everyone    0  #{date_str} test_file2     
+        -rwxrwxrwx  1 #{@user_name}  staff       0  #{date_str} test_long_file1
       TEXT
       # rubocop:enable Layout/TrailingWhitespace
 
       system 'touch test_file1 ; chmod 754 test_file1; dd if=/dev/zero of=test_file1 bs=100 count=1'
-      system 'touch test_file2 ; chmod 421 test_file2'
+      system 'touch test_file2 ; chmod 421 test_file2; chgrp everyone test_file2'
       system 'touch test_long_file1 ; chmod 777 test_long_file1'
       stats = LsFileStat.bulk_create %w[test_file2 test_file1 test_long_file1]
       screen = Screen.new(stats)

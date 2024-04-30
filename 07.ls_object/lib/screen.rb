@@ -32,18 +32,10 @@ class Screen
   def out_in_detail(show_block_size: false)
     return if @file_stats.empty?
 
+    width_formats = max_widths
     rows = []
     @file_stats.each do |stat|
-      output_parts = []
-      output_parts << format('%<type>1s%<permission>8s ', type: stat.type, permission: stat.permission)
-      output_parts << format("% #{pick_max_width_nlink}s", stat.nlink)
-      output_parts << format("%-#{pick_max_width_owner}s ", stat.owner)
-      output_parts << format("%-#{pick_max_width_group}s ", stat.group)
-      output_parts << format("% #{pick_max_with_size}s", stat.size_in_ls_format)
-      output_parts << format("% #{pick_max_width_atime}s", stat.atime_in_ls_format)
-      output_parts << format("%-#{pick_max_width_filename}s", stat.name(show_link: true))
-
-      rows << output_parts.join(' ')
+      rows << stat_out_detail_template(stat, width_formats)
     end
 
     if show_block_size
@@ -57,6 +49,19 @@ class Screen
   end
 
   private
+
+  def stat_out_detail_template(stat, width_formats)
+    output_parts = []
+    output_parts << format('%<type>1s%<permission>8s ', type: stat.type, permission: stat.permission)
+    output_parts << format("% #{width_formats[:nlink]}s", stat.nlink)
+    output_parts << format("%-#{width_formats[:owner]}s ", stat.owner)
+    output_parts << format("%-#{width_formats[:group]}s ", stat.group)
+    output_parts << format("% #{width_formats[:size]}s", stat.size_in_ls_format)
+    output_parts << format("% #{width_formats[:atime]}s", stat.atime_in_ls_format)
+    output_parts << format("%-#{width_formats[:filename]}s", stat.name(show_link: true))
+
+    output_parts.join(' ')
+  end
 
   def calc_column_num(max_char_length)
     # コンソール幅と最長のファイル名から、ファイルの名前を全て並べられるファイルの最大個数を計算
@@ -72,32 +77,38 @@ class Screen
     (@file_stats.length.to_f / column_num).ceil
   end
 
+  def max_widths
+    {
+      nlink: pick_max_width_nlink,
+      owner: pick_max_width_owner,
+      group: pick_max_width_group,
+      size: pick_max_with_size,
+      atime: pick_max_width_atime,
+      filename: pick_max_width_filename
+    }
+  end
+
   def pick_max_width_nlink
-    pick_max_str_len @file_stats.map(&:nlink)
+    @file_stats.map { |stat| stat.nlink.to_s.length }.max
   end
 
   def pick_max_width_owner
-    pick_max_str_len @file_stats.map(&:owner)
+    @file_stats.map { |stat| stat.owner.length }.max
   end
 
   def pick_max_width_group
-    pick_max_str_len @file_stats.map(&:group)
+    @file_stats.map { |stat| stat.group.length }.max
   end
 
   def pick_max_with_size
-    pick_max_str_len @file_stats.map(&:size_in_ls_format)
+    @file_stats.map { |stat| stat.size_in_ls_format.length }.max
   end
 
   def pick_max_width_atime
-    pick_max_str_len @file_stats.map(&:atime_in_ls_format)
+    @file_stats.map { |stat| stat.atime_in_ls_format.length }.max
   end
 
   def pick_max_width_filename
-    pick_max_str_len @file_stats.map(&:name)
-  end
-
-  # TODO: うまく解決できていない
-  def pick_max_str_len(string_list)
-    string_list.map { |string| string.to_s.length }.max
+    @file_stats.map { |stat| stat.name.length }.max
   end
 end
