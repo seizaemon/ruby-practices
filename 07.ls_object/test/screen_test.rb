@@ -43,7 +43,6 @@ end
 class ScreenInDetailTest < Minitest::Test
   include WorkDir
   def setup
-    @console_width = TEST_CONSOLE_WIDTH
     @user_name = Etc.getpwuid(Process::UID.rid).name
     @group_name = Etc.getgrgid(Process::GID.rid).name
   end

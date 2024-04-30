@@ -16,7 +16,7 @@ def main
   opt.on('-l') { long_format = true }
 
   paths = opt.parse(ARGV)
-  paths = ['.'] if paths.empty?
+  paths << '.' if paths.empty?
 
   stats = LsFileStat.bulk_create(paths, reverse:)
   file_stats = stats.filter(&:file?)
@@ -26,9 +26,8 @@ def main
 
   return if dir_stats.empty?
 
-  label = !file_stats.empty? ? true : false
-  separator = !file_stats.empty? ? true : false
-  print_dir_stats dir_stats, long_format, reverse, all_visible, label:, separator:
+  puts if !file_stats.empty?
+  print_dir_stats dir_stats, long_format:, reverse:, all_visible:, label: !file_stats.empty?
 end
 
 def print_file_stats(file_stats, long_format)
@@ -42,22 +41,21 @@ def print_file_stats(file_stats, long_format)
   end
 end
 
-def print_dir_stats(dir_stats, *options, label: false, separator: false)
-  puts if separator
-  out = if label
-          dir_stats.map do |stat|
-            <<~TEXT
-              #{stat.name}:
-              #{show_dir_stat(stat, *options)}
-            TEXT
-          end
-        else
-          dir_stats.map { |stat| show_dir_stat stat, *options }
-        end
+def print_dir_stats(dir_stats, long_format:, reverse:, all_visible:, label:)
+  out = dir_stats.map do |stat|
+    if label
+      <<~TEXT
+        #{stat.name}:
+        #{show_dir_stat(stat, long_format:, reverse:, all_visible:)}
+      TEXT
+    else
+      show_dir_stat stat, long_format:, reverse:, all_visible:
+    end
+  end
   puts out.join("\n")
 end
 
-def show_dir_stat(dir_stat, long_format, reverse, all_visible)
+def show_dir_stat(dir_stat, long_format:, reverse:, all_visible:)
   file_names = Dir.glob('*', (all_visible ? File::FNM_DOTMATCH : 0), base: dir_stat.name)
   file_names << '..' if all_visible
 
@@ -67,10 +65,7 @@ def show_dir_stat(dir_stat, long_format, reverse, all_visible)
     stats = LsFileStat.bulk_create(file_names, reverse:)
     screen = Screen.new(stats)
     if long_format
-      <<~TEXT
-        total #{stats.map(&:blocks).sum}
-        #{screen.out_in_detail}
-      TEXT
+      screen.out_in_detail(show_block_size: true)
     else
       screen.out
     end

@@ -5,19 +5,15 @@ require 'time'
 require 'pathname'
 
 class LsFileStat
-  DISABLE = '-'
-  READ = 'r'
-  WRITE = 'w'
-  EXEC = 'x'
   MODE_MAP = {
-    '0' => "#{DISABLE}#{DISABLE}#{DISABLE}",
-    '1' => "#{DISABLE}#{DISABLE}#{EXEC}",
-    '2' => "#{DISABLE}#{WRITE}#{DISABLE}",
-    '3' => "#{DISABLE}#{WRITE}#{EXEC}",
-    '4' => "#{READ}#{DISABLE}#{DISABLE}",
-    '5' => "#{READ}#{DISABLE}#{EXEC}",
-    '6' => "#{READ}#{WRITE}#{DISABLE}",
-    '7' => "#{READ}#{WRITE}#{EXEC}"
+    '0' => '---',
+    '1' => '--x',
+    '2' => '-w-',
+    '3' => '-wx',
+    '4' => 'r--',
+    '5' => 'r-x',
+    '6' => 'rw-',
+    '7' => 'rwx'
   }.freeze
 
   def initialize(file_path)
@@ -25,11 +21,27 @@ class LsFileStat
     @path = file_path
   end
 
-  # ok
-  def name(show_link: false)
-    return "#{@path} -> #{readlink}" if @stat.symlink? && show_link
+  def self.bulk_create(paths, base: '', reverse: false)
+    missing = []
 
-    @path
+    paths_sorted = reverse ? paths.sort.reverse : paths.sort
+
+    paths_sorted.map do |path|
+      target_path = Pathname.new(path)
+      if target_path.absolute?
+        LsFileStat.new(path)
+      else
+        base_path = Pathname.new(base)
+        LsFileStat.new(base_path.join(path).to_s)
+      end
+    rescue Errno::ENOENT
+      # エラー抑止
+      missing << path
+    end
+  end
+
+  def name(show_link: false)
+    @stat.symlink? && show_link ? "#{@path} -> #{readlink}" : @path
   end
 
   def nlink
@@ -44,7 +56,7 @@ class LsFileStat
 
   def permission
     mode_octet = @stat.mode.to_s(8)[-3..].chars
-    convert_mode_str mode_octet
+    convert_mode(mode_octet)
   end
 
   def owner
@@ -79,48 +91,23 @@ class LsFileStat
     @stat.blocks
   end
 
-  def self.bulk_create(paths, base: '', reverse: false)
-    missing_paths = []
-    stats = []
-
-    paths_sorted = reverse ? paths.sort.reverse : paths.sort
-
-    paths_sorted.each do |path|
-      target_path = Pathname.new path
-      if target_path.absolute?
-        stats << LsFileStat.new(path)
-      else
-        base_path = Pathname.new base
-        stats << LsFileStat.new(base_path.join(path).to_s)
-      end
-    rescue Errno::ENOENT
-      missing_paths << path
-    end
-
-    stats
-  end
-
   private
 
   def readlink
     target_pathname = Pathname.new File.readlink(@path)
-    current_pathname = Pathname.new '.'
+    current_pathname = Pathname.new('.')
     target_pathname.relative_path_from(current_pathname).to_s
   end
 
-  def convert_mode_str(mode_octet)
-    owner_mode_str = MODE_MAP[mode_octet[0]]
-    group_mode_str = MODE_MAP[mode_octet[1]]
-    other_mode_str = MODE_MAP[mode_octet[2]]
+  def convert_mode(mode_octet)
+    owner_mode = @stat.setuid? ? convert_setid(MODE_MAP[mode_octet[0]]) : MODE_MAP[mode_octet[0]]
+    group_mode = @stat.setuid? ? convert_setid(MODE_MAP[mode_octet[1]]) : MODE_MAP[mode_octet[1]]
+    other_mode = @stat.sticky? ? MODE_MAP[mode_octet[2]].gsub(/x$/, 't').gsub(/-$/, 'T') : MODE_MAP[mode_octet[2]]
 
-    owner_mode_str = convert_setid_str(owner_mode_str) if @stat.setuid?
-    group_mode_str = convert_setid_str(group_mode_str) if @stat.setgid?
-    other_mode_str = other_mode_str.gsub(/x$/, 't').gsub(/-$/, 'T') if @stat.sticky?
-
-    [owner_mode_str, group_mode_str, other_mode_str].join('')
+    [owner_mode, group_mode, other_mode].join
   end
 
-  def convert_setid_str(mode_str)
+  def convert_setid(mode_str)
     mode_str.gsub(/x$/, 's').gsub(/-$/, 'S')
   end
 end

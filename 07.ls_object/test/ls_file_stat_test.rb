@@ -191,7 +191,8 @@ end
 
 class LsBulkCreateTest < Minitest::Test
   include WorkDir
-  # bulk_createは
+
+  # bulk_createはパスの配列をstatsに変換する
   def test_bulk_create
     with_work_dir do
       system 'touch test_file1 test_file2'
