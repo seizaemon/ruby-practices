@@ -22,8 +22,6 @@ class LsFileStat
   end
 
   def self.bulk_create(paths, base: '', reverse: false)
-    missing = []
-
     paths_sorted = reverse ? paths.sort.reverse : paths.sort
 
     paths_sorted.map do |path|
@@ -34,9 +32,6 @@ class LsFileStat
         base_path = Pathname.new(base)
         LsFileStat.new(base_path.join(path).to_s)
       end
-    rescue Errno::ENOENT
-      # エラー抑止
-      missing << path
     end
   end
 
