@@ -89,7 +89,7 @@ class LsFileStat
   private
 
   def readlink
-    target_pathname = Pathname.new File.readlink(@path)
+    target_pathname = Pathname.new(File.readlink(@path))
     current_pathname = Pathname.new('.')
     target_pathname.relative_path_from(current_pathname).to_s
   end

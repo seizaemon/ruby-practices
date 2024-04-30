@@ -27,7 +27,7 @@ def main
   return if dir_stats.empty?
 
   puts if !file_stats.empty?
-  print_dir_stats dir_stats, long_format:, reverse:, all_visible:, label: !file_stats.empty?
+  print_dir_stats(dir_stats, long_format:, reverse:, all_visible:, label: !file_stats.empty?)
 end
 
 def print_file_stats(file_stats, long_format)
@@ -49,7 +49,7 @@ def print_dir_stats(dir_stats, long_format:, reverse:, all_visible:, label:)
         #{show_dir_stat(stat, long_format:, reverse:, all_visible:)}
       TEXT
     else
-      show_dir_stat stat, long_format:, reverse:, all_visible:
+      show_dir_stat(stat, long_format:, reverse:, all_visible:)
     end
   end
   puts out.join("\n")

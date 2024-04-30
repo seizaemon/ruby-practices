@@ -50,19 +50,6 @@ class Screen
 
   private
 
-  def stat_out_detail_template(stat, width_formats)
-    output_parts = []
-    output_parts << format('%<type>1s%<permission>8s ', type: stat.type, permission: stat.permission)
-    output_parts << format("% #{width_formats[:nlink]}s", stat.nlink)
-    output_parts << format("%-#{width_formats[:owner]}s ", stat.owner)
-    output_parts << format("%-#{width_formats[:group]}s ", stat.group)
-    output_parts << format("% #{width_formats[:size]}s", stat.size_in_ls_format)
-    output_parts << format("% #{width_formats[:atime]}s", stat.atime_in_ls_format)
-    output_parts << format("%-#{width_formats[:filename]}s", stat.name(show_link: true))
-
-    output_parts.join(' ')
-  end
-
   def calc_column_num(max_char_length)
     # コンソール幅と最長のファイル名から、ファイルの名前を全て並べられるファイルの最大個数を計算
     return 1 if max_char_length >= @console_width
@@ -75,6 +62,19 @@ class Screen
 
   def calc_max_row_num(column_num)
     (@file_stats.length.to_f / column_num).ceil
+  end
+
+  def stat_out_detail_template(stat, width_formats)
+    output_parts = []
+    output_parts << format('%<type>1s%<permission>8s ', type: stat.type, permission: stat.permission)
+    output_parts << format("% #{width_formats[:nlink]}s", stat.nlink)
+    output_parts << format("%-#{width_formats[:owner]}s ", stat.owner)
+    output_parts << format("%-#{width_formats[:group]}s ", stat.group)
+    output_parts << format("% #{width_formats[:size]}s", stat.size_in_ls_format)
+    output_parts << format("% #{width_formats[:atime]}s", stat.atime_in_ls_format)
+    output_parts << format("%-#{width_formats[:filename]}s", stat.name(show_link: true))
+
+    output_parts.join(' ')
   end
 
   def max_widths
