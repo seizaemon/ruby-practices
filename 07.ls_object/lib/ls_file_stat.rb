@@ -21,32 +21,34 @@ class LsFileStat
     @path = file_path
   end
 
-  def self.bulk_create(paths, base: '', reverse: false)
+  def self.bulk_create(paths, base_path: '', reverse: false)
     paths_sorted = reverse ? paths.sort.reverse : paths.sort
 
     paths_sorted.map do |path|
-      target_path = Pathname.new(path)
-      if target_path.absolute?
-        LsFileStat.new(path)
-      else
-        base_path = Pathname.new(base)
-        LsFileStat.new(base_path.join(path).to_s)
-      end
+      path_pathnamed = Pathname.new(path)
+      target_path = path_pathnamed.absolute? ? path : Pathname.new(base_path).join(path_pathnamed).to_s
+      LsFileStat.new(target_path)
     end
   end
 
-  def name(show_link: false)
-    @stat.symlink? && show_link ? "#{@path} -> #{readlink}" : @path
+  def name
+    @path
+  end
+
+  def symlink?
+    @stat.symlink?
+  end
+
+  def original
+    readlink if @stat.symlink?
   end
 
   def nlink
     @stat.nlink
   end
 
-  def size_in_ls_format
-    return "0x#{@stat.rdev_major}00000#{@stat.rdev_minor}" if @stat.blockdev? || @stat.chardev?
-
-    @stat.size.to_s
+  def size
+    @stat.size
   end
 
   def permission
@@ -62,8 +64,8 @@ class LsFileStat
     Etc.getgrgid(@stat.gid).name
   end
 
-  def atime_in_ls_format
-    @stat.atime.strftime('%_m %_d %H:%M')
+  def atime
+    @stat.atime
   end
 
   def type
@@ -74,12 +76,16 @@ class LsFileStat
     @stat.ftype[0].downcase
   end
 
-  def file?
-    @stat.file?
-  end
-
   def directory?
     @stat.directory?
+  end
+
+  def blockdev?
+    @stat.blockdev?
+  end
+
+  def chardev?
+    @stat.chardev?
   end
 
   def blocks

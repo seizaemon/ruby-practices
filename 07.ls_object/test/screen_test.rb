@@ -23,10 +23,10 @@ class ScreenTest < Minitest::Test
       test_file00 test_file01 test_file02
     TEXT
     with_work_dir do
-      stats = LsFileStat.bulk_create create_test_files(3)
-      screen = Screen.new stats
+      stats = LsFileStat.bulk_create(create_test_files(3))
+      screen = Screen.new(stats)
 
-      assert_output(expected) { puts screen.out }
+      assert_output(expected) { screen.show }
     end
   end
 
@@ -34,10 +34,13 @@ class ScreenTest < Minitest::Test
   def test_with_empty_dir
     with_work_dir do
       stats = LsFileStat.bulk_create []
-      screen = Screen.new stats
-      assert_output("\n") { puts screen.out }
+      screen = Screen.new(stats)
+      assert_output("\n") { screen.show }
     end
   end
+
+  # show_recurseのテスト
+
 end
 
 class ScreenInDetailTest < Minitest::Test
@@ -47,16 +50,16 @@ class ScreenInDetailTest < Minitest::Test
     @group_name = Etc.getgrgid(Process::GID.rid).name
   end
 
-  # out_in_deatailはファイルの詳細情報を一列で表示する
-  def test_detail_output
+  # showはファイルの詳細情報を一列で表示する
+  def test_show
     with_work_dir do
-      date_str = Time.now.strftime('%-m %-d %H:%M')
+      date_str = Time.now.strftime('%_m %_d %H:%M')
 
       # rubocop:disable Layout/TrailingWhitespace
       expected = <<~TEXT
-        -rwxr-xr--  1 #{@user_name}  staff     100  #{date_str} test_file1     
-        -r---w---x  1 #{@user_name}  everyone    0  #{date_str} test_file2     
-        -rwxrwxrwx  1 #{@user_name}  staff       0  #{date_str} test_long_file1
+        -rwxr-xr--  1 #{@user_name}  staff     100 #{date_str} test_file1     
+        -r---w---x  1 #{@user_name}  everyone    0 #{date_str} test_file2     
+        -rwxrwxrwx  1 #{@user_name}  staff       0 #{date_str} test_long_file1
       TEXT
       # rubocop:enable Layout/TrailingWhitespace
 
@@ -64,9 +67,12 @@ class ScreenInDetailTest < Minitest::Test
       system 'touch test_file2 ; chmod 421 test_file2; chgrp everyone test_file2'
       system 'touch test_long_file1 ; chmod 777 test_long_file1'
       stats = LsFileStat.bulk_create %w[test_file2 test_file1 test_long_file1]
-      screen = Screen.new(stats)
+      screen = Screen.new(stats, { long_format: true })
 
-      assert_output(expected) { puts screen.out_in_detail }
+      assert_output(expected) { screen.show }
     end
   end
+
+  # show_recurseはファイルの詳細情報を再帰的に表示する
+
 end

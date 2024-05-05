@@ -1,114 +1,121 @@
 # frozen_string_literal: true
 
 require 'io/console/size'
-require 'matrix'
+require_relative 'ls_file_stat'
 
 class Screen
-  def initialize(file_stats)
+  def initialize(file_stats, options = {})
     @file_stats = file_stats
+
+    @long_format = options[:long_format]
+    @reverse = options[:reverse]
+    @all_visible = options[:all_visible]
+    @header = options[:header]
+
     _, @console_width = IO.console_size
   end
 
-  # statsの配列から出力用マトリクスを作成して出力内容を整理する
-  def out
-    return if @file_stats.empty?
-
-    max_filename_char_length = pick_max_width_filename
-    max_column_length = calc_column_num(max_filename_char_length)
-    max_row_length = calc_max_row_num(max_column_length)
-
-    out = []
-    # 行列の大きさを決め手列方向に@statsを並べる
-    out_matrix = Matrix.build(max_row_length, max_column_length) { |row, col| @file_stats[row + max_row_length * col] }
-    out_matrix.row_vectors.each do |row|
-      out << row.to_a.map do |stat|
-        format("%-#{max_filename_char_length}s", stat.nil? ? '' : stat.name)
-      end.join(' ')
+  def show
+    if @long_format
+      puts show_detail(@file_stats)
+    else
+      puts show_normal(@file_stats)
     end
-
-    out.join("\n")
   end
 
-  def out_in_detail(show_block_size: false)
-    return if @file_stats.empty?
+  def recursive_show
+    output_blocks = @file_stats.map do |stat|
+      file_names = Dir.glob('*', (@all_visible ? File::FNM_DOTMATCH : 0), base: stat.name)
+      file_names << '..' if @all_visible
 
-    width_formats = max_widths
-    rows = []
-    @file_stats.each do |stat|
-      rows << stat_out_detail_template(stat, width_formats)
+      output_block = ''
+      Dir.chdir(stat.name) do
+        recursive_stats = LsFileStat.bulk_create(file_names, reverse: @reverse)
+        output_block = "#{stat.name}:\n" if @header
+        output_block +=
+          if @long_format
+            <<~TEXT
+              total #{@file_stats.map(&:blocks).sum}
+              #{show_detail(recursive_stats)}
+            TEXT
+          else
+            show_normal(recursive_stats)
+          end
+      end
+      output_block
     end
 
-    if show_block_size
-      <<~TEXT
-        total #{@file_stats.map(&:blocks).sum}
-        #{rows.join("\n")}
-      TEXT
-    else
-      rows.join("\n")
-    end
+    puts output_blocks.join("\n")
   end
 
   private
 
-  def calc_column_num(max_char_length)
-    # コンソール幅と最長のファイル名から、ファイルの名前を全て並べられるファイルの最大個数を計算
-    return 1 if max_char_length >= @console_width
+  def show_normal(stats)
+    stat_attrs = stats.map { |stat| format_stat_attr(stat) }
+    max_lengths = get_max_lengths(stat_attrs)
 
-    # (max_length + 1) * column_num + max_length < console_width となるconlumn_numの最大値を求める
-    column_num = ((@console_width - max_char_length) / (max_char_length + 1)).to_i
-    # statsの要素数が最大列に満たない場合はそのまま返す
-    column_num > @file_stats.length ? @file_stats.length : column_num
+    num_of_columns = num_of_columns > stats.length ? stats.length : ((@console_width - max_lengths[:filename]) / (max_lengths[:filename] + 1)).to_i
+    num_of_rows = calc_row_length(num_of_columns)
+
+    output_rows = Array.new(num_of_rows) do |row_index|
+      stats_in_row = Array.new(num_of_columns) { |col| stats[row_index + num_of_rows * col] }
+      stats_in_row.map { |stat| stat.name.ljust(max_lengths[:filename]) }.join(' ')
+    end
+
+    output_rows.join("\n")
   end
 
-  def calc_max_row_num(column_num)
-    (@file_stats.length.to_f / column_num).ceil
+  def show_detail(stats)
+    stat_attrs = stats.map { |stat| format_stat_attr(stat) }
+    max_lengths = get_max_lengths(stat_attrs)
+
+    output_rows = stat_attrs.map { |attr| create_output_row_in_detail(attr, max_lengths) }
+
+    output_rows.join("\n")
   end
 
-  def stat_out_detail_template(stat, width_formats)
-    output_parts = []
-    output_parts << format('%<type>1s%<permission>8s ', type: stat.type, permission: stat.permission)
-    output_parts << format("% #{width_formats[:nlink]}s", stat.nlink)
-    output_parts << format("%-#{width_formats[:owner]}s ", stat.owner)
-    output_parts << format("%-#{width_formats[:group]}s ", stat.group)
-    output_parts << format("% #{width_formats[:size]}s", stat.size_in_ls_format)
-    output_parts << format("% #{width_formats[:atime]}s", stat.atime_in_ls_format)
-    output_parts << format("%-#{width_formats[:filename]}s", stat.name(show_link: true))
+  def calc_row_length(column_length)
+    return 0 if column_length.zero?
 
-    output_parts.join(' ')
+    (@file_stats.length.to_f / column_length).ceil
   end
 
-  def max_widths
+  def format_stat_attr(stat)
     {
-      nlink: pick_max_width_nlink,
-      owner: pick_max_width_owner,
-      group: pick_max_width_group,
-      size: pick_max_with_size,
-      atime: pick_max_width_atime,
-      filename: pick_max_width_filename
+      type: stat.type,
+      permission: stat.permission,
+      nlink: stat.nlink,
+      owner: stat.owner,
+      group: stat.group,
+      size: stat.blockdev? || stat.chardev? ? "0x#{stat.rdev_major}00000#{stat.rdev_minor}" : stat.size.to_s,
+      atime: stat.atime.strftime('%_m %_d %H:%M'),
+      name: stat.symlink? && @long_format ? "#{stat.name} -> #{stat.original}" : stat.name
     }
   end
 
-  def pick_max_width_nlink
-    @file_stats.map { |stat| stat.nlink.to_s.length }.max
+  def get_max_lengths(stat_attrs)
+    return Hash.new(0) if stat_attrs.empty?
+
+    {
+      nlink: stat_attrs.map { |attr| attr[:nlink].to_s.length }.max,
+      owner: stat_attrs.map { |attr| attr[:owner].length }.max,
+      group: stat_attrs.map { |attr| attr[:group].length }.max,
+      size: stat_attrs.map { |attr| attr[:size].length }.max,
+      atime: 11,
+      filename: stat_attrs.map { |attr| attr[:name].length }.max
+    }
   end
 
-  def pick_max_width_owner
-    @file_stats.map { |stat| stat.owner.length }.max
-  end
+  def create_output_row_in_detail(attr, width_formats)
+    output_parts = []
+    output_parts << format('%<type>1s%<permission>8s ', type: attr[:type], permission: attr[:permission])
+    output_parts << format("% #{width_formats[:nlink]}s", attr[:nlink])
+    output_parts << format("%-#{width_formats[:owner]}s ", attr[:owner])
+    output_parts << format("%-#{width_formats[:group]}s ", attr[:group])
+    output_parts << format("% #{width_formats[:size]}s", attr[:size])
+    output_parts << format("% #{width_formats[:atime]}s", attr[:atime])
+    output_parts << format("%-#{width_formats[:filename]}s", attr[:name])
 
-  def pick_max_width_group
-    @file_stats.map { |stat| stat.group.length }.max
-  end
-
-  def pick_max_with_size
-    @file_stats.map { |stat| stat.size_in_ls_format.length }.max
-  end
-
-  def pick_max_width_atime
-    @file_stats.map { |stat| stat.atime_in_ls_format.length }.max
-  end
-
-  def pick_max_width_filename
-    @file_stats.map { |stat| stat.name.length }.max
+    output_parts.join(' ')
   end
 end
