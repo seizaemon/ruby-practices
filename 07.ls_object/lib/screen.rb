@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'io/console/size'
-require_relative 'ls_file_stat'
 
 class Screen
   def initialize(file_stats, options = {})
@@ -15,37 +14,21 @@ class Screen
     _, @console_width = IO.console_size
   end
 
-  def show
-    if @long_format
-      puts show_detail(@file_stats)
-    else
-      puts show_normal(@file_stats)
-    end
+  def show_files
+    return nil if @file_stats.empty?
+
+    @long_format ? show_detail(@file_stats) : show_normal(@file_stats)
   end
 
-  def recursive_show
-    output_blocks = @file_stats.map do |stat|
-      file_names = Dir.glob('*', (@all_visible ? File::FNM_DOTMATCH : 0), base: stat.name)
-      file_names << '..' if @all_visible
+  def recursive_show(base: nil)
+    return nil if @file_stats.empty?
 
-      output_block = ''
-      Dir.chdir(stat.name) do
-        recursive_stats = LsFileStat.bulk_create(file_names, reverse: @reverse)
-        output_block = "#{stat.name}:\n" if @header
-        output_block +=
-          if @long_format
-            <<~TEXT
-              total #{@file_stats.map(&:blocks).sum}
-              #{show_detail(recursive_stats)}
-            TEXT
-          else
-            show_normal(recursive_stats)
-          end
-      end
-      output_block
-    end
-
-    puts output_blocks.join("\n")
+    output_blocks = []
+    output_blocks << "#{base}:" if @header
+    output_blocks << "total #{@file_stats.map(&:blocks).sum}" if @long_format
+    output_blocks << "#{@file_stats.map(&:blocks).max} " if @long_format
+    output_blocks << (@long_format ? show_detail(@file_stats) : show_normal(@file_stats)).to_s
+    output_blocks.join("\n")
   end
 
   private
@@ -54,8 +37,9 @@ class Screen
     stat_attrs = stats.map { |stat| format_stat_attr(stat) }
     max_lengths = get_max_lengths(stat_attrs)
 
-    num_of_columns = num_of_columns > stats.length ? stats.length : ((@console_width - max_lengths[:filename]) / (max_lengths[:filename] + 1)).to_i
-    num_of_rows = calc_row_length(num_of_columns)
+    # TODO: 個数の表現
+    num_of_columns = calc_column_num(max_lengths[:filename])
+    num_of_rows = calc_row_num(num_of_columns)
 
     output_rows = Array.new(num_of_rows) do |row_index|
       stats_in_row = Array.new(num_of_columns) { |col| stats[row_index + num_of_rows * col] }
@@ -74,10 +58,18 @@ class Screen
     output_rows.join("\n")
   end
 
-  def calc_row_length(column_length)
-    return 0 if column_length.zero?
+  def calc_column_num(max_name_length)
+    return 0 if max_name_length.zero?
 
-    (@file_stats.length.to_f / column_length).ceil
+    # 列数の最大値は最長のファイル名をスペースで連結してコンソール幅を超えない最大数と同じ
+    column_num = ((@console_width - max_name_length) / (max_name_length + 1)).to_i
+    column_num > @file_stats.length ? @file_stats.length : column_num
+  end
+
+  def calc_row_num(column_num)
+    return 0 if column_num.zero?
+
+    (@file_stats.length.to_f / column_num).ceil
   end
 
   def format_stat_attr(stat)

@@ -25,7 +25,7 @@ class LsTest < Minitest::Test
       expected = <<~TEXT
         test_dir   test_file1 test_file2
       TEXT
-      assert_equal expected, r.gets('')
+      assert_equal expected, r.gets(nil)
     end
   end
 
@@ -39,7 +39,7 @@ class LsTest < Minitest::Test
       expected = <<~TEXT
         test_file3 test_file4
       TEXT
-      assert_equal expected, r.gets('')
+      assert_equal expected, r.gets(nil)
     end
   end
 
