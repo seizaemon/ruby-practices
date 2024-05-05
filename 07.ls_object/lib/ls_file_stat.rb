@@ -25,8 +25,8 @@ class LsFileStat
     paths_sorted = reverse ? paths.sort.reverse : paths.sort
 
     paths_sorted.map do |path|
-      path_pathnamed = Pathname.new(path)
-      target_path = path_pathnamed.absolute? ? path : Pathname.new(base_path).join(path_pathnamed).to_s
+      path_obj = Pathname.new(path)
+      target_path = path_obj.absolute? ? path : Pathname.new(base_path).join(path_obj).to_s
       LsFileStat.new(target_path)
     end
   end

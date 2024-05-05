@@ -20,27 +20,25 @@ def main
   non_recursive_stats = stats.reject(&:directory?)
   recursive_stats = stats.select(&:directory?)
 
-  non_recursive_output = Screen.new(non_recursive_stats, options).show_files
-  options[:header] = true if !non_recursive_output.nil? || recursive_stats.length > 1
-  recursive_outputs = create_recursive_output(recursive_stats, options)
+  non_recursive_result = Screen.new(non_recursive_stats, options).show_files
+  options[:header] = true if !non_recursive_result.nil? || recursive_stats.length > 1
+  recursive_results = create_recursive_results(recursive_stats, options)
 
-  puts [non_recursive_output, recursive_outputs].compact.join("\n\n")
+  puts [non_recursive_result, recursive_results].flatten.compact.join("\n\n")
 end
 
-def create_recursive_output(stats, options)
-  return nil if stats.empty?
-
+def create_recursive_results(stats, options)
   stats.map do |stat|
-    file_names = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: stat.name)
-    file_names << '..' if options[:all_visible]
+    globed_files = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: stat.name)
+    globed_files << '..' if options[:all_visible]
 
-    recursive_out = ''
+    result = ''
     Dir.chdir(stat.name) do
-      stats_in_dir = LsFileStat.bulk_create(file_names, reverse: options[:reverse])
-      recursive_out = Screen.new(stats_in_dir, options).recursive_show(base: stat.name)
+      stats_in_dir = LsFileStat.bulk_create(globed_files, reverse: options[:reverse])
+      result = Screen.new(stats_in_dir, options).recursive_show(base: stat.name)
     end
 
-    recursive_out
+    result
   end
 end
 

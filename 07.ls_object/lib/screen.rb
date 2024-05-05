@@ -37,36 +37,35 @@ class Screen
     stat_attrs = stats.map { |stat| format_stat_attr(stat) }
     max_lengths = get_max_lengths(stat_attrs)
 
-    # TODO: 個数の表現
-    num_of_columns = calc_column_num(max_lengths[:filename])
-    num_of_rows = calc_row_num(num_of_columns)
+    num_of_columns = calc_num_of_columns(max_lengths[:filename])
+    num_of_rows = calc_num_of_rows(num_of_columns)
 
-    output_rows = Array.new(num_of_rows) do |row_index|
-      stats_in_row = Array.new(num_of_columns) { |col| stats[row_index + num_of_rows * col] }
+    formatted_rows = Array.new(num_of_rows) do |row_index|
+      stats_in_row = Array.new(num_of_columns) { |col_index| stats[row_index + num_of_rows * col_index] }
       stats_in_row.map { |stat| stat.name.ljust(max_lengths[:filename]) }.join(' ')
     end
 
-    output_rows.join("\n")
+    formatted_rows.join("\n")
   end
 
   def show_detail(stats)
     stat_attrs = stats.map { |stat| format_stat_attr(stat) }
     max_lengths = get_max_lengths(stat_attrs)
 
-    output_rows = stat_attrs.map { |attr| create_output_row_in_detail(attr, max_lengths) }
+    formatted_rows = stat_attrs.map { |attr| format_row_in_detail(attr, max_lengths) }
 
-    output_rows.join("\n")
+    formatted_rows.join("\n")
   end
 
-  def calc_column_num(max_name_length)
+  def calc_num_of_columns(max_name_length)
     return 0 if max_name_length.zero?
 
-    # 列数の最大値は最長のファイル名をスペースで連結してコンソール幅を超えない最大数と同じ
+    # 表示する列数の最大値は最長のファイル名をスペースで連結した結果がコンソール幅を超えない最大数と同じ
     column_num = ((@console_width - max_name_length) / (max_name_length + 1)).to_i
     column_num > @file_stats.length ? @file_stats.length : column_num
   end
 
-  def calc_row_num(column_num)
+  def calc_num_of_rows(column_num)
     return 0 if column_num.zero?
 
     (@file_stats.length.to_f / column_num).ceil
@@ -98,7 +97,7 @@ class Screen
     }
   end
 
-  def create_output_row_in_detail(attr, width_formats)
+  def format_row_in_detail(attr, width_formats)
     output_parts = []
     output_parts << format('%<type>1s%<permission>8s ', type: attr[:type], permission: attr[:permission])
     output_parts << format("% #{width_formats[:nlink]}s", attr[:nlink])
