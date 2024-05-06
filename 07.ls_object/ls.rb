@@ -20,14 +20,17 @@ def main
   non_recursive_stats = stats.reject(&:directory?)
   recursive_stats = stats.select(&:directory?)
 
-  non_recursive_result = Screen.new(non_recursive_stats, options).show_files
+  non_recursive_result = Screen.new(non_recursive_stats, options).show
+  # 再帰処理の結果にディレクトリ名のヘッダを表示するかどうかを制御
   options[:header] = true if !non_recursive_result.nil? || recursive_stats.length > 1
   recursive_results = create_recursive_results(recursive_stats, options)
 
-  puts [non_recursive_result, recursive_results].flatten.compact.join("\n\n")
+  puts [non_recursive_result, recursive_results].compact.join("\n\n")
 end
 
 def create_recursive_results(stats, options)
+  return nil if stats.empty?
+
   stats.map do |stat|
     globed_files = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: stat.name)
     globed_files << '..' if options[:all_visible]

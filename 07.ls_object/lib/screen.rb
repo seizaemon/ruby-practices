@@ -7,26 +7,21 @@ class Screen
     @file_stats = file_stats
 
     @long_format = options[:long_format]
-    @reverse = options[:reverse]
-    @all_visible = options[:all_visible]
     @header = options[:header]
 
     _, @console_width = IO.console_size
   end
 
-  def show_files
+  def show
     return nil if @file_stats.empty?
 
     @long_format ? show_detail(@file_stats) : show_normal(@file_stats)
   end
 
   def recursive_show(base: nil)
-    return nil if @file_stats.empty?
-
     output_blocks = []
     output_blocks << "#{base}:" if @header
     output_blocks << "total #{@file_stats.map(&:blocks).sum}" if @long_format
-    output_blocks << "#{@file_stats.map(&:blocks).max} " if @long_format
     output_blocks << (@long_format ? show_detail(@file_stats) : show_normal(@file_stats)).to_s
     output_blocks.join("\n")
   end
@@ -41,7 +36,7 @@ class Screen
     num_of_rows = calc_num_of_rows(num_of_columns)
 
     formatted_rows = Array.new(num_of_rows) do |row_index|
-      stats_in_row = Array.new(num_of_columns) { |col_index| stats[row_index + num_of_rows * col_index] }
+      stats_in_row = Array.new(num_of_columns) { |col_index| stats[row_index + num_of_rows * col_index] }.compact
       stats_in_row.map { |stat| stat.name.ljust(max_lengths[:filename]) }.join(' ')
     end
 
@@ -60,8 +55,7 @@ class Screen
   def calc_num_of_columns(max_name_length)
     return 0 if max_name_length.zero?
 
-    # 表示する列数の最大値は最長のファイル名をスペースで連結した結果がコンソール幅を超えない最大数と同じ
-    column_num = ((@console_width - max_name_length) / (max_name_length + 1)).to_i
+    column_num = ((@console_width - 1) / (max_name_length + 1)).to_i
     column_num > @file_stats.length ? @file_stats.length : column_num
   end
 
@@ -75,11 +69,11 @@ class Screen
     {
       type: stat.type,
       permission: stat.permission,
-      nlink: stat.nlink,
+      nlink: stat.nlink.to_s,
       owner: stat.owner,
       group: stat.group,
       size: stat.blockdev? || stat.chardev? ? "0x#{stat.rdev_major}00000#{stat.rdev_minor}" : stat.size.to_s,
-      atime: stat.atime.strftime('%_m %_d %H:%M'),
+      ctime: stat.ctime.strftime('%_m %_d %H:%M'),
       name: stat.symlink? && @long_format ? "#{stat.name} -> #{stat.original}" : stat.name
     }
   end
@@ -92,20 +86,20 @@ class Screen
       owner: stat_attrs.map { |attr| attr[:owner].length }.max,
       group: stat_attrs.map { |attr| attr[:group].length }.max,
       size: stat_attrs.map { |attr| attr[:size].length }.max,
-      atime: 11,
+      ctime: 11,
       filename: stat_attrs.map { |attr| attr[:name].length }.max
     }
   end
 
-  def format_row_in_detail(attr, width_formats)
+  def format_row_in_detail(attr, widths)
     output_parts = []
-    output_parts << format('%<type>1s%<permission>8s ', type: attr[:type], permission: attr[:permission])
-    output_parts << format("% #{width_formats[:nlink]}s", attr[:nlink])
-    output_parts << format("%-#{width_formats[:owner]}s ", attr[:owner])
-    output_parts << format("%-#{width_formats[:group]}s ", attr[:group])
-    output_parts << format("% #{width_formats[:size]}s", attr[:size])
-    output_parts << format("% #{width_formats[:atime]}s", attr[:atime])
-    output_parts << format("%-#{width_formats[:filename]}s", attr[:name])
+    output_parts << "#{attr[:type]}#{attr[:permission]} "
+    output_parts << attr[:nlink].ljust(widths[:nlink])
+    output_parts << "#{attr[:owner].ljust(widths[:owner])} "
+    output_parts << "#{attr[:group].ljust(widths[:group])} "
+    output_parts << attr[:size].rjust(widths[:size])
+    output_parts << attr[:ctime].rjust(widths[:ctime])
+    output_parts << attr[:name].ljust(widths[:filename])
 
     output_parts.join(' ')
   end

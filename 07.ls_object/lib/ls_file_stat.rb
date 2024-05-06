@@ -25,8 +25,8 @@ class LsFileStat
     paths_sorted = reverse ? paths.sort.reverse : paths.sort
 
     paths_sorted.map do |path|
-      path_obj = Pathname.new(path)
-      target_path = path_obj.absolute? ? path : Pathname.new(base_path).join(path_obj).to_s
+      path_name = Pathname.new(path)
+      target_path = path_name.absolute? ? path : Pathname.new(base_path).join(path_name).to_s
       LsFileStat.new(target_path)
     end
   end
@@ -64,8 +64,8 @@ class LsFileStat
     Etc.getgrgid(@stat.gid).name
   end
 
-  def atime
-    @stat.atime
+  def ctime
+    @stat.ctime
   end
 
   def type
