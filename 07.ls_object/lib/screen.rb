@@ -32,11 +32,11 @@ class Screen
     stat_attrs = stats.map { |stat| format_stat_attr(stat) }
     max_lengths = get_max_lengths(stat_attrs)
 
-    num_of_columns = calc_num_of_columns(max_lengths[:filename])
-    num_of_rows = calc_num_of_rows(num_of_columns)
+    column_count = count_columns(max_lengths[:filename])
+    row_count = count_rows(column_count)
 
-    formatted_rows = Array.new(num_of_rows) do |row_index|
-      stats_in_row = Array.new(num_of_columns) { |col_index| stats[row_index + num_of_rows * col_index] }.compact
+    formatted_rows = Array.new(row_count) do |row_index|
+      stats_in_row = Array.new(column_count) { |col_index| stats[row_index + row_count * col_index] }.compact
       stats_in_row.map { |stat| stat.name.ljust(max_lengths[:filename]) }.join(' ')
     end
 
@@ -52,17 +52,17 @@ class Screen
     formatted_rows.join("\n")
   end
 
-  def calc_num_of_columns(max_name_length)
+  def count_columns(max_name_length)
     return 0 if max_name_length.zero?
 
-    column_num = ((@console_width - 1) / (max_name_length + 1)).to_i
-    column_num > @file_stats.length ? @file_stats.length : column_num
+    column_count = ((@console_width - 1) / (max_name_length + 1)).to_i
+    column_count > @file_stats.length ? @file_stats.length : column_count
   end
 
-  def calc_num_of_rows(column_num)
-    return 0 if column_num.zero?
+  def count_rows(column_count)
+    return 0 if column_count.zero?
 
-    (@file_stats.length.to_f / column_num).ceil
+    (@file_stats.length.to_f / column_count).ceil
   end
 
   def format_stat_attr(stat)
