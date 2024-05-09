@@ -26,10 +26,10 @@ class Screen
 
   def sort_src_data
     if @reverse
-      key_reversed = @src_data.except('').sort.reverse.to_h
+      key_reversed = @src_data.sort.reverse.to_h
       key_reversed.transform_values { |stats| stats.sort_by(&:path).reverse }
     else
-      key_sorted = @src_data.except('').sort.to_h
+      key_sorted = @src_data.sort.to_h
       key_sorted.transform_values { |stats| stats.sort_by(&:path) }
     end
   end
@@ -40,7 +40,7 @@ class Screen
   end
 
   def create_output_blocks_with_dir_stats(src_data_sorted)
-    src_data_sorted.map do |dir_name, stats|
+    src_data_sorted.except('').map do |dir_name, stats|
       block = []
 
       block << "#{dir_name}:" if @header
