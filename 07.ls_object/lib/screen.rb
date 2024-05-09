@@ -17,36 +17,33 @@ class Screen
     output_blocks = []
 
     output_blocks << create_output_block_with_file_stats
-
-    dir_src_data = @src_data.except('')
-    dir_src_data_sorted = sort_src_data(dir_src_data)
-    output_blocks << create_output_blocks_with_dir_stats(dir_src_data_sorted, header: @header)
+    output_blocks << create_output_blocks_with_dir_stats(sort_src_data)
 
     puts output_blocks.reject(&:empty?).join("\n\n")
   end
 
   private
 
-  def sort_src_data(src_data)
+  def sort_src_data
     if @reverse
-      key_reversed = src_data.sort.reverse.to_h
-      key_reversed.transform_values { |stats| stats.sort_by(&:name).reverse }
+      key_reversed = @src_data.except('').sort.reverse.to_h
+      key_reversed.transform_values { |stats| stats.sort_by(&:path).reverse }
     else
-      key_sorted = src_data.sort.to_h
-      key_sorted.transform_values { |stats| stats.sort_by(&:name) }
+      key_sorted = @src_data.except('').sort.to_h
+      key_sorted.transform_values { |stats| stats.sort_by(&:path) }
     end
   end
 
   def create_output_block_with_file_stats
-    file_stats = @reverse ? @src_data[''].sort_by(&:name).reverse : @src_data[''].sort_by(&:name)
+    file_stats = @reverse ? @src_data[''].sort_by(&:path).reverse : @src_data[''].sort_by(&:path)
     @long_format ? show_detail(file_stats) : show_normal(file_stats)
   end
 
-  def create_output_blocks_with_dir_stats(src_data, header: true)
-    src_data.map do |dir_name, stats|
+  def create_output_blocks_with_dir_stats(src_data_sorted)
+    src_data_sorted.map do |dir_name, stats|
       block = []
 
-      block << "#{dir_name}:" if header
+      block << "#{dir_name}:" if @header
       block << "total #{stats.map(&:blocks).sum}" if @long_format
 
       block << (@long_format ? show_detail(stats) : show_normal(stats))
@@ -56,15 +53,14 @@ class Screen
   end
 
   def show_normal(stats)
-    stat_attrs = stats.map { |stat| format_stat_attr(stat) }
-    max_lengths = get_max_lengths(stat_attrs)
+    name_max_length = stats.map(&:path).map(&:length).max || 0
 
-    column_count = count_columns(stats.length, max_lengths)
+    column_count = count_columns(stats.length, name_max_length)
     row_count = count_rows(column_count, stats.length)
 
     formatted_rows = Array.new(row_count) do |row_index|
       stats_in_row = Array.new(column_count) { |col_index| stats[row_index + row_count * col_index] }.compact
-      stats_in_row.map { |stat| stat.name.ljust(max_lengths[:filename]) }.join(' ')
+      stats_in_row.map { |stat| stat.path.ljust(name_max_length) }.join(' ')
     end
 
     formatted_rows.join("\n")
@@ -79,13 +75,13 @@ class Screen
     formatted_rows.join("\n")
   end
 
-  def count_columns(stats_length, max_lengths )
-    column_count = ((@console_width - 1) / (max_lengths[:filename] + 1)).to_i
+  def count_columns(stats_length, max_length)
+    column_count = ((@console_width - 1) / (max_length + 1)).to_i
     column_count > stats_length ? stats_length : column_count
   end
 
   def count_rows(column_count, stats_length)
-    return 0 if stats_length.zero?
+    return 0 if column_count.zero?
 
     (stats_length.to_f / column_count).ceil
   end
@@ -99,13 +95,11 @@ class Screen
       group: stat.group,
       size: stat.blockdev? || stat.chardev? ? "0x#{stat.rdev_major}00000#{stat.rdev_minor}" : stat.size.to_s,
       ctime: stat.ctime.strftime('%_m %_d %H:%M'),
-      filename: stat.symlink? && @long_format ? "#{stat.name} -> #{stat.original}" : stat.name
+      filename: stat.symlink? && @long_format ? "#{stat.path} -> #{stat.original}" : stat.path
     }
   end
 
   def get_max_lengths(stat_attrs)
-    return Hash.new(0) if stat_attrs.empty?
-
     {
       nlink: stat_attrs.map { |attr| attr[:nlink].to_s.length }.max,
       owner: stat_attrs.map { |attr| attr[:owner].length }.max,

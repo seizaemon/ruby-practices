@@ -23,7 +23,7 @@ class LsFileStat
     @stat = File.lstat @base_path.join(@path).to_s
   end
 
-  def name
+  def path
     @path.to_s
   end
 
@@ -91,7 +91,7 @@ class LsFileStat
   private
 
   def readlink
-    Pathname.new(File.readlink(@base_path.join(@path).to_s)).to_s
+    File.readlink(@base_path.join(@path).to_s)
   end
 
   def convert_mode(mode_octet)
