@@ -16,27 +16,23 @@ class LsFileStat
     '7' => 'rwx'
   }.freeze
 
-  def initialize(file_path)
-    @stat = File.lstat file_path
-    @path = file_path
-  end
+  def initialize(file_path, base_path = '')
+    @path = Pathname.new(file_path)
+    @base_path = Pathname.new(base_path)
 
-  def self.bulk_create(paths, base_path: '', reverse: false)
-    paths_sorted = reverse ? paths.sort.reverse : paths.sort
-
-    paths_sorted.map do |path|
-      path_name = Pathname.new(path)
-      target_path = path_name.absolute? ? path : Pathname.new(base_path).join(path_name).to_s
-      LsFileStat.new(target_path)
-    end
+    @stat = File.lstat @base_path.join(@path).to_s
   end
 
   def name
-    @path
+    @path.to_s
   end
 
   def symlink?
     @stat.symlink?
+  end
+
+  def file?
+    @stat.file?
   end
 
   def original
@@ -95,9 +91,7 @@ class LsFileStat
   private
 
   def readlink
-    target_pathname = Pathname.new(File.readlink(@path))
-    current_pathname = Pathname.new('.')
-    target_pathname.relative_path_from(current_pathname).to_s
+    Pathname.new(File.readlink(@base_path.join(@path).to_s)).to_s
   end
 
   def convert_mode(mode_octet)

@@ -15,34 +15,25 @@ def main
 
   paths = opt.parse(ARGV)
   paths << '.' if paths.empty?
+  options[:header] = !(paths.length == 1 || paths.empty?)
 
-  stats = LsFileStat.bulk_create(paths, reverse: options[:reverse])
-  non_recursive_stats = stats.reject(&:directory?)
-  recursive_stats = stats.select(&:directory?)
+  screen_src = { '' => [] }
 
-  non_recursive_result = Screen.new(non_recursive_stats, options).show
-  # 再帰処理の結果にディレクトリ名のヘッダを表示するかどうかを制御
-  options[:header] = true if !non_recursive_result.nil? || recursive_stats.length > 1
-  recursive_results = create_recursive_results(recursive_stats, options)
-
-  puts [non_recursive_result, recursive_results].compact.join("\n\n")
+  paths.each do |path|
+    stat = LsFileStat.new(path)
+    if stat.file?
+      screen_src[''] << stat
+    else
+      screen_src[path] = bulk_create_stats(path, options)
+    end
+  end
+  Screen.new(screen_src, options).show
 end
 
-def create_recursive_results(stats, options)
-  return nil if stats.empty?
-
-  stats.map do |stat|
-    globed_files = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: stat.name)
-    globed_files << '..' if options[:all_visible]
-
-    result = ''
-    Dir.chdir(stat.name) do
-      stats_in_dir = LsFileStat.bulk_create(globed_files, reverse: options[:reverse])
-      result = Screen.new(stats_in_dir, options).recursive_show(base: stat.name)
-    end
-
-    result
-  end
+def bulk_create_stats(base_path, options)
+  globed_files = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: base_path)
+  globed_files << '..' if options[:all_visible]
+  globed_files.map { |file| LsFileStat.new(file, base_path) }
 end
 
 main

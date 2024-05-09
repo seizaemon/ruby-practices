@@ -12,13 +12,13 @@ class LsFileStatTest < Minitest::Test
   include WorkDir
   include CreateTestFile
 
-  # atimeはlsのフォーマットに従ってファイル最新更新日を返す
-  def test_atime
+  # ctimeはlsのフォーマットに従ってファイル最新更新日時を返す
+  def test_ctime
     with_work_dir do
       file_name, = filename_with_owner_and_group
       updated = Time.now.strftime('%_m %_d %H:%M')
       stat = LsFileStat.new(file_name)
-      assert_equal updated, stat.atime_in_ls_format
+      assert_equal updated, stat.ctime.strftime('%_m %_d %H:%M')
     end
   end
 
@@ -40,46 +40,23 @@ class LsFileStatTest < Minitest::Test
     end
   end
 
-  # 通常ファイルの場合ファイルパスを返す
-  def test_name_with_normal_file
+  # originalは対象がsymlinkの場合はオリジナルファイルのパスを付与して返す
+  def test_original
     with_work_dir do
-      # カレントディレクトリにあるファイルの場合
-      test_file_name, = filename_with_owner_and_group
-      stat_current = LsFileStat.new test_file_name
-      assert_equal test_file_name, stat_current.name
-
-      # カレントにないファイルの場合
-      system 'mkdir test_dir ; touch test_dir/test_file3'
-      stat_not_current = LsFileStat.new('test_dir/test_file3')
-      assert_equal 'test_dir/test_file3', stat_not_current.name
+      system 'mkdir test_dir ; touch test_dir/test_file ;  ln -s test_dir/test_file test_link'
+      stat_symlink = LsFileStat.new('test_link')
+      stat_non_symlink = LsFileStat.new('test_dir/test_file')
+      assert_equal 'test_dir/test_file', stat_symlink.original
+      assert_nil stat_non_symlink.original
     end
   end
 
-  # リンクの場合ファイル名はオリジナルファイルのパスを付与して返す
-  def test_name_with_link
+  # permissionはファイルパーミッションの文字列を返す
+  def test_permission
     with_work_dir do
-      system 'touch test_file ; ln -s test_file test_link'
-      stat = LsFileStat.new('test_link')
-      assert_equal 'test_link -> test_file', stat.name(show_link: true)
-    end
-  end
-
-  # sizeはファイルサイズを返す
-  def test_str_size_with_normal_file
-    with_work_dir do
-      system 'touch test_file1 ; dd if=/dev/zero of=test_file1 bs=128 count=1'
-      stat = LsFileStat.new('test_file1')
-      assert_equal '128', stat.size_in_ls_format
-    end
-  end
-
-  # block fileとcharacter fileの場合、sizeはmajor numberを返す
-  def test_str_size_with_special_file
-    with_work_dir do
-      char_dev_stat = LsFileStat.new('/dev/null')
-      blk_dev_stat = LsFileStat.new('/dev/disk0')
-      assert_equal '0x1000000', blk_dev_stat.size_in_ls_format
-      assert_equal '0x3000002', char_dev_stat.size_in_ls_format
+      system 'touch test_file; chmod 752 test_file'
+      stat_mode_test = LsFileStat.new('test_file')
+      assert_equal 'rwxr-x-w-', stat_mode_test.permission
     end
   end
 
@@ -89,16 +66,6 @@ class LsFileStatTest < Minitest::Test
       system 'mkdir test_dir; touch test_dir/test_file'
       stat = LsFileStat.new('test_dir/test_file')
       assert_equal 'test_dir/test_file', stat.name
-    end
-  end
-
-  # nlinkはファイルリンク数を返す
-  def test_nlink
-    with_work_dir do
-      system 'mkdir test; touch test/test_file1'
-      stat = LsFileStat.new('test')
-      # ディレクトリ内のハードリンクの数は .と..とtest_file1で3つ
-      assert_equal 3, stat.nlink
     end
   end
 end
@@ -130,6 +97,15 @@ class LsFileStatTypeTest
       system 'mkfifo test_fifo'
       file_entry = LsFileStat.new('test_fifo')
       assert_equal 'p', file_entry.type
+    end
+  end
+
+  # typeは指定したファイル名がディレクトリの場合dを返す
+  def test_type_with_directory
+    with_work_dir do
+      system 'mkdir test_dir'
+      file_entry = LsFileStat.new('test_dir')
+      assert_equal 'd', file_entry.type
     end
   end
 end
@@ -192,7 +168,7 @@ end
 class LsBulkCreateTest < Minitest::Test
   include WorkDir
 
-  # bulk_createはパスの配列をstatsに変換する
+  # bulk_createはファイルパスの配列をFile.lstatの配列に変換する
   def test_bulk_create
     with_work_dir do
       system 'touch test_file1 test_file2'
