@@ -14,8 +14,8 @@ def main
   opt.on('-l') { options[:long_format] = true }
 
   paths = opt.parse(ARGV)
-  paths << '.' if paths.empty?
   options[:header] = !(paths.length == 1 || paths.empty?)
+  paths << '.' if paths.empty?
 
   screen_src = { '' => [] }
 
@@ -24,13 +24,13 @@ def main
     if stat.file?
       screen_src[''] << stat
     else
-      screen_src[path] = bulk_create_stats(path, options)
+      screen_src[path] = create_stats_in_directory(path, options)
     end
   end
   Screen.new(screen_src, options).show
 end
 
-def bulk_create_stats(base_path, options)
+def create_stats_in_directory(base_path, options)
   globed_files = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: base_path)
   globed_files << '..' if options[:all_visible]
   globed_files.map { |file| LsFileStat.new(file, base_path) }
