@@ -17,30 +17,20 @@ class Screen
     output_blocks = []
 
     output_blocks << create_output_block_with_file_stats
-    output_blocks << create_output_blocks_with_dir_stats(sort_src_data)
+    output_blocks << create_output_blocks_with_dir_stats
 
     puts output_blocks.reject(&:empty?).join("\n\n")
   end
 
   private
 
-  def sort_src_data
-    if @reverse
-      key_reversed = @src_data.sort.reverse.to_h
-      key_reversed.transform_values { |stats| stats.sort_by(&:path).reverse }
-    else
-      key_sorted = @src_data.sort.to_h
-      key_sorted.transform_values { |stats| stats.sort_by(&:path) }
-    end
-  end
-
   def create_output_block_with_file_stats
-    file_stats = @reverse ? @src_data[''].sort_by(&:path).reverse : @src_data[''].sort_by(&:path)
+    file_stats = @src_data[''].sort_by(&:path)
     @long_format ? show_detail(file_stats) : show_normal(file_stats)
   end
 
-  def create_output_blocks_with_dir_stats(src_data_sorted)
-    src_data_sorted.except('').map do |dir_name, stats|
+  def create_output_blocks_with_dir_stats
+    @src_data.except('').map do |dir_name, stats|
       block = []
 
       block << "#{dir_name}:" if @header
@@ -56,7 +46,7 @@ class Screen
     name_max_length = stats.map(&:path).map(&:length).max || 0
 
     column_count = count_columns(stats.length, name_max_length)
-    row_count = count_rows(column_count, stats.length)
+    row_count = column_count.zero? ? 0 : count_rows(column_count, stats.length)
 
     formatted_rows = Array.new(row_count) do |row_index|
       stats_in_row = Array.new(column_count) { |col_index| stats[row_index + row_count * col_index] }.compact
@@ -81,8 +71,6 @@ class Screen
   end
 
   def count_rows(column_count, stats_length)
-    return 0 if column_count.zero?
-
     (stats_length.to_f / column_count).ceil
   end
 
@@ -105,8 +93,7 @@ class Screen
       owner: stat_attrs.map { |attr| attr[:owner].length }.max,
       group: stat_attrs.map { |attr| attr[:group].length }.max,
       size: stat_attrs.map { |attr| attr[:size].length }.max,
-      ctime: 11,
-      filename: stat_attrs.map { |attr| attr[:filename].length }.max
+      ctime: 11
     }
   end
 
@@ -118,7 +105,7 @@ class Screen
     output_parts << "#{attr[:group].ljust(widths[:group])} "
     output_parts << attr[:size].rjust(widths[:size])
     output_parts << attr[:ctime].rjust(widths[:ctime])
-    output_parts << attr[:filename].ljust(widths[:filename])
+    output_parts << attr[:filename]
 
     output_parts.join(' ')
   end

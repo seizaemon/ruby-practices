@@ -12,16 +12,6 @@ class LsFileStatTest < Minitest::Test
   include WorkDir
   include CreateTestFile
 
-  # ctimeはlsのフォーマットに従ってファイル最新更新日時を返す
-  def test_ctime
-    with_work_dir do
-      file_name, = filename_with_owner_and_group
-      updated = Time.now.strftime('%_m %_d %H:%M')
-      stat = LsFileStat.new(file_name)
-      assert_equal updated, stat.ctime.strftime('%_m %_d %H:%M')
-    end
-  end
-
   # ownerはファイルの所属オーナーを返す
   def test_owner
     with_work_dir do
@@ -60,12 +50,12 @@ class LsFileStatTest < Minitest::Test
     end
   end
 
-  # baseを指定した場合nameはファイル名のみが入る
+  # baseを指定した場合pathはファイル名のみが入る
   def test_base_dir
     with_work_dir do
       system 'mkdir test_dir; touch test_dir/test_file'
       stat = LsFileStat.new('test_dir/test_file')
-      assert_equal 'test_dir/test_file', stat.name
+      assert_equal 'test_dir/test_file', stat.path
     end
   end
 end
@@ -161,21 +151,6 @@ class LsFileStatPermissionTest < Minitest::Test
 
       assert_equal 'rwxrwxrwt', non_sticky_stat.permission
       assert_equal 'rw-rw-rwT', sticky_stat.permission
-    end
-  end
-end
-
-class LsBulkCreateTest < Minitest::Test
-  include WorkDir
-
-  # bulk_createはファイルパスの配列をFile.lstatの配列に変換する
-  def test_bulk_create
-    with_work_dir do
-      system 'touch test_file1 test_file2'
-      stats = LsFileStat.bulk_create %w[test_file1 test_file2]
-      test_stat1 = LsFileStat.new 'test_file1'
-      test_stat2 = LsFileStat.new 'test_file2'
-      assert stats, [test_stat1, test_stat2]
     end
   end
 end

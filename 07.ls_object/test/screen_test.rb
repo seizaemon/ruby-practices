@@ -9,35 +9,81 @@ require_relative './work_dir'
 class ScreenTest < Minitest::Test
   include WorkDir
 
-  def create_test_files(max_file_num)
-    (0..max_file_num - 1).map do |n|
-      suffix = format('%02d', n)
-      File.open("test_file#{suffix}", 'w', 0o755) {}
-      "test_file#{suffix}"
+  def create_test_files
+    system 'touch test_file00 ; touch test_file01 ; touch test_long_file1'
+    %w[test_file00 test_file01 test_long_file1]
+  end
+
+  # headerオプションなしの場合ディレクトリ表示の場合でもディレクトリ名は表示されない
+  def test_show_without_header_option
+    expected = <<~TEXT
+      test_file00     test_file01     test_long_file1
+    TEXT
+
+    with_work_dir do
+      stats = create_test_files.map do |file|
+        LsFileStat.new(file)
+      end
+      src_data = { '' => [], 'test_dir' => stats }
+      screen = Screen.new(src_data)
+
+      assert_output(expected) { screen.show }
     end
   end
 
-  # ファイルが少ない場合ファイル一覧は横にならべられる
-  def test_out_with_few_files
-    expected = <<~TEXT.chomp
-      test_file00 test_file01 test_file02
+  # headerオプションをつけるとディレクトリ内の結果表示でディレクトリ名が表示される
+  def test_show_with_header_option
+    expected = <<~TEXT
+      test_dir:
+      test_file00     test_file01     test_long_file1
+    TEXT
+
+    with_work_dir do
+      system 'mkdir test_dir'
+
+      stats = create_test_files.map do |file|
+        LsFileStat.new(file)
+      end
+      src_data = { '' => [], 'test_dir' => stats }
+      screen = Screen.new(src_data, { header: true })
+
+      assert_output(expected) { screen.show }
+    end
+  end
+
+  # 通常ファイルとディレクトリ名は通常辞書順で並ぶ
+  def test_show_with_few_files
+    expected = <<~TEXT
+      test_file00     test_file01     test_long_file1
+
+      test_dir1:
+      test_file00     test_file01     test_long_file1
+
+      test_dir2:
+      test_file00     test_file01     test_long_file1
     TEXT
     with_work_dir do
-      stats = LsFileStat.bulk_create(create_test_files(3))
-      screen = Screen.new(stats)
+      stats = create_test_files.map do |file|
+        LsFileStat.new(file)
+      end
+      src_data = { '' => stats, 'test_dir1' => stats, 'test_dir2' => stats }
+      screen = Screen.new(src_data, { header: true })
 
-      assert_equal expected, screen.show_files
+      assert_output(expected) { screen.show }
     end
   end
 
   # ディレクトリ内にfileがなにも無い場合は何も表示しない
-  def test_with_empty_dir
+  def test_show_with_empty_dir
     with_work_dir do
-      stats = LsFileStat.bulk_create []
-      screen = Screen.new(stats)
-      assert_equal '', screen.show_recursive
+      src_data = { '' => [] }
+      screen = Screen.new(src_data)
+
+      assert_output("\n") { screen.show }
     end
   end
+
+  # ファイル名の長さが異なり複数行表示される場合
 end
 
 class ScreenInDetailTest < Minitest::Test
@@ -47,26 +93,35 @@ class ScreenInDetailTest < Minitest::Test
     @group_name = Etc.getgrgid(Process::GID.rid).name
   end
 
-  # showはファイルの詳細情報を一列で表示する
-  def test_show
-    with_work_dir do
-      date_str = Time.now.strftime('%_m %_d %H:%M')
-
-      # rubocop:disable Layout/TrailingWhitespace
-      expected = <<~TEXT.chomp
-        -rwxr-xr--  1 #{@user_name}  staff     100 #{date_str} test_file1     
-        -r---w---x  1 #{@user_name}  everyone    0 #{date_str} test_file2     
-        -rwxrwxrwx  1 #{@user_name}  staff       0 #{date_str} test_long_file1
-      TEXT
-      # rubocop:enable Layout/TrailingWhitespace
-
+  def create_test_files_in_long_option_cases(base_dir = '.')
+    Dir.chdir(base_dir) do
       system 'touch test_file1 ; chmod 754 test_file1; dd if=/dev/zero of=test_file1 bs=100 count=1'
       system 'touch test_file2 ; chmod 421 test_file2; chgrp everyone test_file2'
       system 'touch test_long_file1 ; chmod 777 test_long_file1'
-      stats = LsFileStat.bulk_create %w[test_file2 test_file1 test_long_file1]
-      screen = Screen.new(stats, { long_format: true })
+    end
+    %w[test_file1 test_file2 test_long_file1]
+  end
 
-      assert_equal expected, screen.show_files
+  # long_formatオプションはファイルの詳細情報を一列で表示する
+  def test_show_with_long_format_option
+    date_str = Time.now.strftime('%_m %_d %H:%M')
+    expected = <<~TEXT
+      -rwxr-xr--  1 #{@user_name}  staff     100 #{date_str} test_file1
+      -r---w---x  1 #{@user_name}  everyone    0 #{date_str} test_file2
+      -rwxrwxrwx  1 #{@user_name}  staff       0 #{date_str} test_long_file1
+    TEXT
+
+    with_work_dir do
+      stats = create_test_files_in_long_option_cases.map do |file|
+        LsFileStat.new(file)
+      end
+
+      src_data = { '' => stats }
+      screen = Screen.new(src_data, { long_format: true })
+
+      assert_output(expected) { screen.show }
     end
   end
+
+  # headerオプション
 end

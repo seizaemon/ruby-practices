@@ -19,7 +19,7 @@ def main
 
   screen_src = { '' => [] }
 
-  paths.each do |path|
+  sort_paths(paths, reverse: options[:reverse]).each do |path|
     stat = LsFileStat.new(path)
     if stat.file?
       screen_src[''] << stat
@@ -27,13 +27,18 @@ def main
       screen_src[path] = create_stats_in_directory(path, options)
     end
   end
+
   Screen.new(screen_src, options).show
 end
 
 def create_stats_in_directory(base_path, options)
-  globed_files = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: base_path)
-  globed_files << '..' if options[:all_visible]
-  globed_files.map { |file| LsFileStat.new(file, base_path) }
+  paths = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: base_path)
+  paths << '..' if options[:all_visible]
+  sort_paths(paths, reverse: options[:reverse]).map { |file| LsFileStat.new(file, base_path) }
+end
+
+def sort_paths(paths, reverse: false)
+  reverse ? paths.reverse : paths
 end
 
 main
