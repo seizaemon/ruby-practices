@@ -6,11 +6,22 @@ require 'time'
 require 'socket'
 require_relative '../lib/ls_file_stat'
 require_relative 'work_dir'
-require_relative 'create_test_file'
 
 class LsFileStatTest < Minitest::Test
   include WorkDir
-  include CreateTestFile
+
+  def filename_with_owner_and_group
+    system 'touch test_file'
+    out = ['id -un', 'id -gn'].map do |cmd|
+      element = ''
+      IO.pipe do |r, w|
+        system cmd, out: w
+        element = r.gets.chomp
+      end
+      element
+    end
+    ['test_file', out].flatten
+  end
 
   # ownerはファイルの所属オーナーを返す
   def test_owner
@@ -30,7 +41,7 @@ class LsFileStatTest < Minitest::Test
     end
   end
 
-  # originalは対象がsymlinkの場合はオリジナルファイルのパスを付与して返す
+  # originalは対象がsymlinkの場合はオリジナルファイルのパスをリンクからの相対パスで返す
   def test_original
     with_work_dir do
       system 'mkdir test_dir ; touch test_dir/test_file ;  ln -s test_dir/test_file test_link'
@@ -50,12 +61,12 @@ class LsFileStatTest < Minitest::Test
     end
   end
 
-  # baseを指定した場合pathはファイル名のみが入る
+  # pathはbaseを指定した場合baseからの相対パスを返す
   def test_base_dir
     with_work_dir do
       system 'mkdir test_dir; touch test_dir/test_file'
       stat = LsFileStat.new('test_dir/test_file')
-      assert_equal 'test_dir/test_file', stat.path
+      assert_equal 'test_file', stat.path('test_dir')
     end
   end
 end
@@ -102,7 +113,12 @@ end
 
 class LsFileStatPermissionTest < Minitest::Test
   include WorkDir
-  include CreateTestFile
+
+  def create_various_type_of_file
+    system 'touch test_file ; chmod 765 test_file ; touch test_file2 ; chmod 421 test_file2 ; touch test_file3 ; chmod 000 test_file3'
+    system 'touch test_file4 ; chmod 4777 test_file4 ; touch test_file5 ; chmod 4666 test_file5'
+    system 'touch test_file6 ; chmod 2777 test_file6 ; touch test_file7 ; chmod 2666 test_file7'
+  end
 
   # permissionはファイルパーミッションを文字列表現で返す
   def test_permission

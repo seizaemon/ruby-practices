@@ -34,11 +34,12 @@ end
 def create_stats_in_directory(base_path, options)
   paths = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: base_path)
   paths << '..' if options[:all_visible]
-  sort_paths(paths, reverse: options[:reverse]).map { |file| LsFileStat.new(file, base_path) }
+  sort_paths(paths, base_path, reverse: options[:reverse]).map { |file| LsFileStat.new(file) }
 end
 
-def sort_paths(paths, reverse: false)
-  reverse ? paths.reverse : paths
+def sort_paths(paths, base_path = '.', reverse: false)
+  paths_sorted = reverse ? paths.sort.reverse : paths.sort
+  paths_sorted.map { |path| Pathname.new(base_path).join(path).to_s }
 end
 
 main

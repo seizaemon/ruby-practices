@@ -16,15 +16,13 @@ class LsFileStat
     '7' => 'rwx'
   }.freeze
 
-  def initialize(file_path, base_path = '')
+  def initialize(file_path)
     @path = Pathname.new(file_path)
-    @base_path = Pathname.new(base_path)
-
-    @stat = File.lstat @base_path.join(@path).to_s
+    @stat = File.lstat @path.to_s
   end
 
-  def path
-    @path.to_s
+  def path(base_path = '')
+    @path.absolute? ? @path.to_s : @path.relative_path_from(base_path).to_s
   end
 
   def symlink?
@@ -91,7 +89,7 @@ class LsFileStat
   private
 
   def readlink
-    File.readlink(@base_path.join(@path).to_s)
+    File.readlink(@path)
   end
 
   def convert_mode(mode_octet)
