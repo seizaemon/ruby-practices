@@ -16,86 +16,85 @@ class LsFileStat
     '7' => 'rwx'
   }.freeze
 
-  def initialize(file_path)
-    @path = Pathname.new(file_path)
-    @stat = File.lstat @path.to_s
+  def initialize(file_pathname)
+    @pathname = file_pathname
   end
 
   def path(base_path = '')
-    @path.absolute? ? @path.to_s : @path.relative_path_from(base_path).to_s
+    @pathname.absolute? ? @pathname.to_s : @pathname.relative_path_from(base_path).to_s
   end
 
   def symlink?
-    @stat.symlink?
+    @pathname.lstat.symlink?
   end
 
   def file?
-    @stat.file?
+    @pathname.lstat.file?
   end
 
   def original
-    readlink if @stat.symlink?
+    readlink if @pathname.lstat.symlink?
   end
 
   def nlink
-    @stat.nlink
+    @pathname.lstat.nlink
   end
 
   def size
-    @stat.size
+    @pathname.lstat.size
   end
 
   def permission
-    mode_octet = @stat.mode.to_s(8)[-3..].chars
+    mode_octet = @pathname.lstat.mode.to_s(8)[-3..].chars
     convert_mode(mode_octet)
   end
 
   def owner
-    Etc.getpwuid(@stat.uid).name
+    Etc.getpwuid(@pathname.lstat.uid).name
   end
 
   def group
-    Etc.getgrgid(@stat.gid).name
+    Etc.getgrgid(@pathname.lstat.gid).name
   end
 
   def ctime
-    @stat.ctime
+    @pathname.lstat.ctime
   end
 
   def type
-    return 'l' if @stat.symlink?
-    return '-' if @stat.file?
-    return 'p' if @stat.ftype == 'fifo'
+    return 'l' if @pathname.lstat.symlink?
+    return '-' if @pathname.lstat.file?
+    return 'p' if @pathname.lstat.ftype == 'fifo'
 
-    @stat.ftype[0].downcase
+    @pathname.lstat.ftype[0].downcase
   end
 
   def directory?
-    @stat.directory?
+    @pathname.lstat.directory?
   end
 
   def blockdev?
-    @stat.blockdev?
+    @pathname.lstat.blockdev?
   end
 
   def chardev?
-    @stat.chardev?
+    @pathname.lstat.chardev?
   end
 
   def blocks
-    @stat.blocks
+    @pathname.lstat.blocks
   end
 
   private
 
   def readlink
-    File.readlink(@path)
+    File.readlink(@pathname)
   end
 
   def convert_mode(mode_octet)
-    owner_mode = @stat.setuid? ? convert_setid(MODE_MAP[mode_octet[0]]) : MODE_MAP[mode_octet[0]]
-    group_mode = @stat.setgid? ? convert_setid(MODE_MAP[mode_octet[1]]) : MODE_MAP[mode_octet[1]]
-    other_mode = @stat.sticky? ? MODE_MAP[mode_octet[2]].gsub(/x$/, 't').gsub(/-$/, 'T') : MODE_MAP[mode_octet[2]]
+    owner_mode = @pathname.lstat.setuid? ? convert_setid(MODE_MAP[mode_octet[0]]) : MODE_MAP[mode_octet[0]]
+    group_mode = @pathname.lstat.setgid? ? convert_setid(MODE_MAP[mode_octet[1]]) : MODE_MAP[mode_octet[1]]
+    other_mode = @pathname.lstat.sticky? ? MODE_MAP[mode_octet[2]].gsub(/x$/, 't').gsub(/-$/, 'T') : MODE_MAP[mode_octet[2]]
 
     [owner_mode, group_mode, other_mode].join
   end

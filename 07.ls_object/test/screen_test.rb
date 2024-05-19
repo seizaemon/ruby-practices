@@ -16,7 +16,7 @@ class ScreenTest < Minitest::Test
 
     file_paths.map do |file_path|
       Dir.chdir(dir_path) { system "touch #{file_path}" }
-      Pathname.new(dir_path).join(file_path).to_s
+      Pathname.new(dir_path).join(file_path)
     end
   end
 
@@ -27,8 +27,8 @@ class ScreenTest < Minitest::Test
     TEXT
 
     with_work_dir do
-      stats = create_test_files('test_dir').map do |file|
-        LsFileStat.new(file)
+      stats = create_test_files('test_dir').map do |file_pathname|
+        LsFileStat.new(file_pathname)
       end
       src_data = { '' => [], 'test_dir' => stats }
       screen = Screen.new(src_data)
@@ -45,8 +45,8 @@ class ScreenTest < Minitest::Test
     TEXT
 
     with_work_dir do
-      stats = create_test_files('test_dir').map do |file|
-        LsFileStat.new(file)
+      stats = create_test_files('test_dir').map do |file_pathname|
+        LsFileStat.new(file_pathname)
       end
       src_data = { '' => [], 'test_dir' => stats }
       screen = Screen.new(src_data, { header: true })
@@ -68,11 +68,11 @@ class ScreenTest < Minitest::Test
     TEXT
     with_work_dir do
       src_data = {}
-      src_data[''] = create_test_files.map { |file_path| LsFileStat.new(file_path) }
+      src_data[''] = create_test_files.map { |file_pathname| LsFileStat.new(file_pathname) }
       %w[test_dir1 test_dir2].each do |dir_path|
         src_data[dir_path] =
-          create_test_files(dir_path).map do |file_path|
-            LsFileStat.new(file_path)
+          create_test_files(dir_path).map do |file_pathname|
+            LsFileStat.new(file_pathname)
           end
       end
       screen = Screen.new(src_data, { header: true })
@@ -105,7 +105,7 @@ class ScreenInDetailTest < Minitest::Test
       system 'touch test_long_file1 ; chmod 777 test_long_file1'
     end
     %w[test_file1 test_file2 test_long_file1].map do |file_path|
-      Pathname.new(base_dir).join(file_path).to_s
+      Pathname.new(base_dir).join(file_path)
     end
   end
 

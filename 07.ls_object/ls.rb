@@ -19,27 +19,29 @@ def main
 
   screen_src = { '' => [] }
 
-  sort_paths(paths, reverse: options[:reverse]).each do |path|
-    stat = LsFileStat.new(path)
+  sort_paths(paths, reverse: options[:reverse]).each do |path_name|
+    stat = LsFileStat.new(path_name)
     if stat.file?
       screen_src[''] << stat
     else
-      screen_src[path] = create_stats_in_directory(path, options)
+      screen_src[path_name.to_s] = create_stats_in_directory(path_name, options)
     end
   end
 
   Screen.new(screen_src, options).show
 end
 
-def create_stats_in_directory(base_path, options)
-  paths = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: base_path)
+def create_stats_in_directory(base_path_name, options)
+  paths = Dir.glob('*', (options[:all_visible] ? File::FNM_DOTMATCH : 0), base: base_path_name.to_s)
   paths << '..' if options[:all_visible]
-  sort_paths(paths, base_path, reverse: options[:reverse]).map { |file| LsFileStat.new(file) }
+  sort_paths(paths, base_path_name.to_s, reverse: options[:reverse]).map do |path_name|
+    LsFileStat.new(path_name)
+  end
 end
 
 def sort_paths(paths, base_path = '.', reverse: false)
-  paths_sorted = reverse ? paths.sort.reverse : paths.sort
-  paths_sorted.map { |path| Pathname.new(base_path).join(path).to_s }
+  sorted_paths = reverse ? paths.sort.reverse : paths.sort
+  sorted_paths.map { |path| Pathname.new(base_path).join(path) }
 end
 
 main

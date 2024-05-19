@@ -3,8 +3,8 @@
 require 'io/console/size'
 
 class Screen
-  def initialize(src_data, options = {})
-    @src_data = src_data
+  def initialize(stats_in_dir, options = {})
+    @stats_in_dir = stats_in_dir
 
     @long_format = options[:long_format]
     @reverse = options[:reverse]
@@ -25,19 +25,18 @@ class Screen
   private
 
   def create_output_block_with_file_stats
-    @long_format ? show_detail(@src_data['']) : show_normal(@src_data[''])
+    @long_format ? show_detail(@stats_in_dir['']) : show_normal(@stats_in_dir[''])
   end
 
   def create_output_blocks_with_dir_stats
-    @src_data.except('').map do |dir_path, stats|
-      block = []
+    @stats_in_dir.except('').map do |dir_path, stats|
+      blocks = []
 
-      block << "#{dir_path}:" if @header
-      block << "total #{stats.map(&:blocks).sum}" if @long_format
+      blocks << "#{dir_path}:" if @header
+      blocks << "total #{stats.map(&:blocks).sum}" if @long_format
+      blocks << (@long_format ? show_detail(stats, dir_path) : show_normal(stats, dir_path))
 
-      block << (@long_format ? show_detail(stats, dir_path) : show_normal(stats, dir_path))
-
-      block.join("\n")
+      blocks.join("\n")
     end
   end
 
@@ -61,7 +60,7 @@ class Screen
 
     formatted_rows = stat_attrs.map { |attr| format_row_in_detail(attr, max_lengths) }
 
-    formatted_rows.join("\n")
+    formatted_rows.flatten.join("\n")
   end
 
   def count_columns(stats_length, max_length)
@@ -92,20 +91,19 @@ class Screen
       owner: stat_attrs.map { |attr| attr[:owner].length }.max,
       group: stat_attrs.map { |attr| attr[:group].length }.max,
       size: stat_attrs.map { |attr| attr[:size].length }.max,
-      ctime: 11
     }
   end
 
   def format_row_in_detail(attr, widths)
-    output_parts = []
-    output_parts << "#{attr[:type]}#{attr[:permission]} "
-    output_parts << attr[:nlink].ljust(widths[:nlink])
-    output_parts << "#{attr[:owner].ljust(widths[:owner])} "
-    output_parts << "#{attr[:group].ljust(widths[:group])} "
-    output_parts << attr[:size].rjust(widths[:size])
-    output_parts << attr[:ctime].rjust(widths[:ctime])
-    output_parts << attr[:filename]
+    columns = []
+    columns << "#{attr[:type]}#{attr[:permission]} "
+    columns << attr[:nlink].ljust(widths[:nlink])
+    columns << "#{attr[:owner].ljust(widths[:owner])} "
+    columns << "#{attr[:group].ljust(widths[:group])} "
+    columns << attr[:size].rjust(widths[:size])
+    columns << attr[:ctime]
+    columns << attr[:filename]
 
-    output_parts.join(' ')
+    columns.join(' ')
   end
 end
