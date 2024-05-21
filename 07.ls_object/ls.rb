@@ -13,4 +13,4 @@ opt.on('-l') { options[:long_format] = true }
 
 ls_object = LsObject.new(opt.parse(ARGV), options)
 
-ls_object.run
+ls_object.main

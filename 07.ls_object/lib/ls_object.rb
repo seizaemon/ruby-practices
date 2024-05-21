@@ -10,7 +10,7 @@ class LsObject
     @options = options
   end
 
-  def run
+  def main
     @options[:header] = !(@paths.length == 1 || @paths.empty?)
 
     @screen_src = { '' => [] }
