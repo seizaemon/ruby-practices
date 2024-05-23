@@ -32,7 +32,6 @@ class Screen
       blocks = []
 
       blocks << "#{dir_path}:" if @header
-      blocks << "total #{stats.map(&:blocks).sum}" if @long_format
       blocks << (@long_format ? DetailFormatter.new(stats, dir_path).write : NormalFormatter.new(stats, dir_path).write)
 
       blocks.join("\n")

@@ -16,7 +16,11 @@ class DetailFormatter
 
     formatted_rows = stat_attrs.map { |attr| format_row_in_detail(attr, max_lengths) }
 
-    formatted_rows.flatten.join("\n")
+    if @base_path == ''
+      formatted_rows.flatten.join("\n")
+    else
+      ["total #{@stats.map(&:blocks).sum}", formatted_rows].flatten.join("\n")
+    end
   end
 
   private
