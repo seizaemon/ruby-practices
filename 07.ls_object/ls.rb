@@ -11,6 +11,4 @@ opt.on('-a') { options[:all_visible] = true }
 opt.on('-r') { options[:reverse] = true }
 opt.on('-l') { options[:long_format] = true }
 
-ls_object = LsObject.new(opt.parse(ARGV), options)
-
-ls_object.main
+LsObject.new(opt.parse(ARGV), options).main
