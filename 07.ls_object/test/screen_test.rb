@@ -31,9 +31,8 @@ class ScreenTest < Minitest::Test
         LsFileStat.new(file_pathname)
       end
       src_data = { '' => [], 'test_dir' => stats }
-      screen = Screen.new(src_data)
 
-      assert_output(expected) { screen.show }
+      assert_equal expected.chomp, Screen.show(src_data)
     end
   end
 
@@ -49,9 +48,8 @@ class ScreenTest < Minitest::Test
         LsFileStat.new(file_pathname)
       end
       src_data = { '' => [], 'test_dir' => stats }
-      screen = Screen.new(src_data, { header: true })
 
-      assert_output(expected) { screen.show }
+      assert_equal expected.chomp, Screen.show(src_data, header: true)
     end
   end
 
@@ -75,9 +73,8 @@ class ScreenTest < Minitest::Test
             LsFileStat.new(file_pathname)
           end
       end
-      screen = Screen.new(src_data, { header: true })
 
-      assert_output(expected) { screen.show }
+      assert_equal expected.chomp, Screen.show(src_data, header: true)
     end
   end
 
@@ -85,9 +82,8 @@ class ScreenTest < Minitest::Test
   def test_show_with_empty_dir
     with_work_dir do
       src_data = { '' => [] }
-      screen = Screen.new(src_data)
 
-      assert_output("\n") { screen.show }
+      assert_equal '', Screen.show(src_data)
     end
   end
 end
@@ -124,9 +120,7 @@ class ScreenInDetailTest < Minitest::Test
       end
 
       src_data = { '' => stats }
-      screen = Screen.new(src_data, { long_format: true })
-
-      assert_output(expected) { screen.show }
+      assert_equal expected.chomp, Screen.show(src_data, { long_format: true })
     end
   end
 
@@ -148,9 +142,7 @@ class ScreenInDetailTest < Minitest::Test
       end
 
       src_data = { '' => [], 'test_dir' => stats }
-      screen = Screen.new(src_data, { long_format: true, header: true })
-
-      assert_output(expected) { screen.show }
+      assert_equal expected.chomp, Screen.show(src_data, { long_format: true },  header: true)
     end
   end
 end

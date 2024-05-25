@@ -4,12 +4,16 @@ require_relative 'normal_formatter'
 require_relative 'detail_formatter'
 
 class Screen
-  def initialize(stats_in_dir, options = {})
-    @stats_in_dir = stats_in_dir
+  def self.show(ls_file_stats, options = {}, header: false)
+    new(ls_file_stats, options, header:).show
+  end
+
+  def initialize(ls_file_stats, options = {}, header: false)
+    @stats = ls_file_stats
 
     @long_format = options[:long_format]
     @reverse = options[:reverse]
-    @header = options[:header]
+    @header = header
   end
 
   def show
@@ -18,23 +22,28 @@ class Screen
     output_blocks << create_output_block_with_file_stats
     output_blocks << create_output_blocks_with_dir_stats
 
-    puts output_blocks.reject(&:empty?).join("\n\n")
+    output_blocks.reject(&:empty?).join("\n\n").encode('UTF-8')
   end
 
   private
 
   def create_output_block_with_file_stats
-    @long_format ? DetailFormatter.new(@stats_in_dir['']).write : NormalFormatter.new(@stats_in_dir['']).write
+    formatter_factory.new(@stats['']).write
   end
 
   def create_output_blocks_with_dir_stats
-    @stats_in_dir.except('').map do |dir_path, stats|
+    @stats.except('').map do |dir_path, stat|
       blocks = []
 
       blocks << "#{dir_path}:" if @header
-      blocks << (@long_format ? DetailFormatter.new(stats, dir_path).write : NormalFormatter.new(stats, dir_path).write)
+      blocks << formatter_factory.new(stat, dir_path).write
 
       blocks.join("\n")
     end
   end
+
+  def formatter_factory
+    @long_format ? DetailFormatter : NormalFormatter
+  end
+
 end

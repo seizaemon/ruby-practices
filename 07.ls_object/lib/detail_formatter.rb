@@ -6,8 +6,6 @@ class DetailFormatter
   def initialize(stats, base_path = '')
     @stats = stats
     @base_path = base_path
-
-    _, @console_width = IO.console_size
   end
 
   def write
@@ -16,11 +14,8 @@ class DetailFormatter
 
     formatted_rows = stat_attrs.map { |attr| format_row_in_detail(attr, max_lengths) }
 
-    if @base_path == ''
-      formatted_rows.flatten.join("\n")
-    else
-      ["total #{@stats.map(&:blocks).sum}", formatted_rows].flatten.join("\n")
-    end
+    total = @base_path.empty? ? [] : ["total #{@stats.map(&:blocks).sum}"]
+    [*total, *formatted_rows].join("\n")
   end
 
   private

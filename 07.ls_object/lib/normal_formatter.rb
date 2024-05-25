@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'io/console/size'
+
 class NormalFormatter
   def initialize(stats, base_path = '')
     @stats = stats
