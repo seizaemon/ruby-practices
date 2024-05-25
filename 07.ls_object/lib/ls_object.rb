@@ -5,6 +5,10 @@ require_relative 'ls_file_stat'
 require_relative 'screen'
 
 class LsObject
+  def self.main(paths, options)
+    new(paths, options).main
+  end
+
   def initialize(paths, options)
     @paths = paths.empty? ? ['.'] : paths
     @options = options
