@@ -12,22 +12,21 @@ class LsObject
   def initialize(paths, options)
     @paths = paths.empty? ? ['.'] : paths
     @options = options
+    @options[:header] = @paths.length > 1
   end
 
   def main
-    header = @paths.length > 1
-
-    screen_src = { '' => [] }
+    ls_file_stats = { '' => [] }
     create_sorted_pathnames(@paths).each do |pathname|
       stat = LsFileStat.new(pathname)
       if stat.file?
-        screen_src[''] << stat
+        ls_file_stats[''] << stat
       else
-        screen_src[pathname.to_s] = create_stats_in_directory(pathname)
+        ls_file_stats[pathname.to_s] = create_stats_in_directory(pathname)
       end
     end
 
-    puts Screen.show(screen_src, @options, header:)
+    puts Screen.show(ls_file_stats, @options)
   end
 
   private

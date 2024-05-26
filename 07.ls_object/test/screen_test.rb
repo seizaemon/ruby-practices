@@ -48,8 +48,9 @@ class ScreenTest < Minitest::Test
         LsFileStat.new(file_pathname)
       end
       src_data = { '' => [], 'test_dir' => stats }
+      options = {header: true}
 
-      assert_equal expected.chomp, Screen.show(src_data, header: true)
+      assert_equal expected.chomp, Screen.show(src_data, options)
     end
   end
 
@@ -142,7 +143,7 @@ class ScreenInDetailTest < Minitest::Test
       end
 
       src_data = { '' => [], 'test_dir' => stats }
-      assert_equal expected.chomp, Screen.show(src_data, { long_format: true },  header: true)
+      assert_equal expected.chomp, Screen.show(src_data, { long_format: true, header: true })
     end
   end
 end
